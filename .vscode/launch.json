@@ -8,6 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Unit Tests",
+            "trace": true,
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "webRoot": "${workspaceFolder}",
             "preLaunchTask": "npm: test"
