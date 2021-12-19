@@ -1,8 +1,24 @@
 import exp = require('constants');
 
+/**
+ * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
+ */
 export interface IExchangeClient {
-    marketBuyOrder(productId: string, price: number, size: number): Promise<Order>;
-    marketSellOrder(productId: string, funds: number): Promise<Order>;
+
+    /**
+     * Creates a buy order that should be filled at current market price
+     * @param productId must match a valid product eg: BTC-USD
+     * @param funds is the ammount of currency you want to buy in USD (eg: 1000)
+     */
+    marketBuyOrder(productId: string, funds: number): Promise<Order>;
+
+    /**
+     * Creates a Sell order that should be filled at current market price
+     * @param productId must match a valid product eg: BTC-USD
+     * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
+     */
+    marketSellOrder(productId: string, size: number): Promise<Order>;
+
     limitBuyOrder(productId: string): Promise<Order>;
     limitSellOrder(productId: string): Promise<Order>;
     stopEntryOrder(productId: string): Promise<Order>;
@@ -44,28 +60,33 @@ export enum Stop {
     ENRTRY = 'entry', //  Triggers when the last trade price changes to a value at or above the
 }
 
+export enum Side {
+    BUY = 'buy',
+    SELL = 'Sell'
+}
+
 export interface Order {
     id: string;
-    price: string; //price per unit of base currency
-    size: string; // amount of base currency to buy/sell
+    price?: number; //price per unit of base currency
+    size?: number; // amount of base currency to buy/sell
     productId: string; // book the order was placed on
-    profile_id?: string; // profile_id that placed the order
-    side: string;
-    funds?: string; //amount of quote currency to spend (for market orders)
+    profile_id?: string; // rofile_id that placed the order
+    side?: Side;  // buy or sell
+    funds?: number; //amount of quote currency to spend (for market orders)
     specified_funds?: string; //funds with fees
     type?: OrderType;
     time_in_force: TimeInForce;
     expire_time?: Date; // timestamp at which order expires
-    post_only: boolean; // if true, forces order to be maker only
+    post_only?: boolean; // if true, forces order to be maker only
     created_at: Date; // time at which order was placed
     done_at?: Date; // time at which order was done
     done_reason?: string; // reason order was done (filled, rejected, or otherwise)
     reject_reason?: string;
-    fill_fees: number; //fees paid on current filled amount
-    filled_size: number; //amount (in base currency) of the order that has been filled
+    fill_fees?: number; //fees paid on current filled amount
+    filled_size?: number; //amount (in base currency) of the order that has been filled
     executed_value?: number;
     status: OrderStatus;
-    settled: boolean; // true if funds have been exchanged and settled
+    settled?: boolean; // true if funds have been exchanged and settled
     stop?: Stop;
     stop_price?: number; // price (in quote currency) at which to execute the order
     funding_amount?: number;
