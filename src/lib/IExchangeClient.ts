@@ -2,6 +2,7 @@ import exp = require('constants');
 
 /**
  * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
+ * https://github.com/danpaquin/coinbasepro-python/blob/master/cbpro/authenticated_client.py
  */
 export interface IExchangeClient {
 
@@ -26,6 +27,9 @@ export interface IExchangeClient {
     cancelOrder(id: string): Promise<boolean>;
     getAllOrders(filter?: Array<OrderStatus>, limit?: number): Promise<Array<Order>>;
     cancellAllOrders();
+
+    getAccount(id: string): Promise<Account>;
+    getAccountHisotory(id: string);
 }
 
 export enum OrderStatus {
@@ -57,12 +61,20 @@ export enum OrderType {
 
 export enum Stop {
     LOSS = 'loss', // Triggers when the last trade price changes to a value at or below the
-    ENRTRY = 'entry', //  Triggers when the last trade price changes to a value at or above the
+    ENRTRY = 'entry', // Triggers when the last trade price changes to a value at or above the
 }
 
 export enum Side {
     BUY = 'buy',
     SELL = 'Sell'
+}
+
+// Entry type indicates the reason for the account change.
+export enum EntryType {
+    TRANSFER = 'transfer', // Funds moved to/from Coinbase to cbpro
+    MATCH = 'match', // Funds moved as a result of a trade
+    FEE = 'fee', //Fee as a result of a trade
+    REBATE = 'rebate' //Fee rebate as per our fee schedule
 }
 
 export interface Order {
@@ -89,5 +101,31 @@ export interface Order {
     settled?: boolean; // true if funds have been exchanged and settled
     stop?: Stop;
     stop_price?: number; // price (in quote currency) at which to execute the order
-    funding_amount?: number;
+    funding_amount?: number; // Amount of margin funding to be rovided for the order
 }
+
+export interface Account {
+    id: string,
+    balance: number,
+    holds: number, // Amount of cash hold in pending order
+    available: number, // how much you can cash out
+    currency: string,
+}
+
+
+export interface AccountHistory {
+    id: string
+    ccreated_at: Date,
+    amount: number,
+    balance: number,
+    type: EntryType,
+    details: AccountHistoryDetails,
+
+}
+
+export interface AccountHistoryDetails {
+    order_id: string;
+    product_id: string;
+    trade_id: string;
+}
+

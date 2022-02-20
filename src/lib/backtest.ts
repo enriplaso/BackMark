@@ -1,4 +1,4 @@
-import { IBacktest } from './IBacktest';
+import { IBacktest, BackTestOptions } from './IBacktest';
 import { ITradingData } from './models/ITradingData';
 import { createReadStream } from 'fs';
 import { IStrategy } from './IStrategy';
@@ -8,27 +8,26 @@ export class Backtest implements IBacktest {
 
     private readline = require('readline'); // Nodejs types for readline are missing
 
-    constructor(private tradingDataPath: string, private stategy?: IStrategy, private fee?: number) { }
+    constructor(private tradingDataPath: string, private stategy: IStrategy, private options?: BackTestOptions) { }
 
-    init() {
-        throw new Error('Method not implemented.');
-    }
 
-    async backTest(): Promise<void> {
+    async run(): Promise<void> {
         try {
             const readInterface = this.readline.createInterface({
                 input: createReadStream(this.tradingDataPath),
-                //output: process.stdout,
                 console: false
             });
 
             let lines = 0;
-            readInterface.on('line', (line) => {
+            readInterface.on('line', async (line) => {
                 lines++;
                 if (lines > 1) {
                     const clumnsArr = line.split(',');
                     console.log(line);
 
+                    const price = (clumnsArr[1] + clumnsArr[2] + clumnsArr[3] + clumnsArr[4]) / 4 // open, close , hight, low.
+
+                    await this.stategy.checkPosition({ timestamp: parseInt(clumnsArr[0]), price, volume: clumnsArr[5] });
 
                     //   console.log(new Date(Number.parseInt(clumnsArr[0])));
 

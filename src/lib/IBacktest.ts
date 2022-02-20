@@ -2,8 +2,12 @@ import { IStrategy } from './IStrategy';
 import { ITradingData } from './models/ITradingData';
 
 export interface IBacktest {
-    init();
-    backTest(): Promise<void>;
+    run(): Promise<void>;
 }
 
-export interface IBackTestResult {}
+export interface IBackTestResult { }
+
+export interface BackTestOptions {
+    startDate?: Date;
+    endDate?: Date;
+}

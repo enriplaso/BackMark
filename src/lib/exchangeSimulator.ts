@@ -1,27 +1,50 @@
-import { Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
+import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
 import { v1 as uuidv1 } from 'uuid';
-import { IExchangeSimulator } from './IExchangeSImulator';
+import { IExchangeSimulator, Summary } from './IExchangeSImulator';
+import { ITradingData } from './models/ITradingData';
+import { getuid } from 'process';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Array<Order> = [];
     private closedOrders: Array<Order> = [];
-    private productCuantity = 0;
+    private account: Account;
+    private productQuantity = 0; //E.G Bitcoin quantity
 
-    constructor(private accountFunds, private fee = 1) { }
 
-    public processOrders(price: number) {
+    constructor(private balance: number, private fee = 1) { }
+
+    public init() {
+        this.account = {
+            id: uuidv1(),
+            balance: this.balance,
+            holds: 0,
+            available: this.balance,
+            currency: "usd"
+        }
+    }
+
+    getSumary(): Summary {
+        throw new Error('Method not implemented.');
+    }
+
+    public processOrders(tradingdata: ITradingData) {
+        if (!this.account) {
+            this.init();
+        }
+
         for (let i = this.orders.length; i > 0; i--) {
             switch (this.orders[i].type) {
                 case OrderType.MARKET:
                     if (this.orders[i].side === Side.BUY) {
-                        this.accountFunds = this.accountFunds - this.orders[i].funds - this.fee;
-                        this.productCuantity = this.productCuantity + (this.orders[i].funds - this.fee) / price;
+                        this.account.balance = this.account.balance - this.orders[i].funds - this.fee;
+                        this.productQuantity = this.productQuantity + (this.orders[i].funds - this.fee) / tradingdata.price;
                     }
                     if (this.orders[i].side === Side.SELL) {
-                        this.accountFunds = this.accountFunds + price - this.fee;
-                        this.productCuantity = this.productCuantity - (this.orders[i].funds - this.fee) / price;
+                        this.account.balance = this.account.balance + tradingdata.price - this.fee;
+                        this.productQuantity = this.productQuantity - (this.orders[i].funds - this.fee) / tradingdata.price;
                     }
                     this.orders[i].status = OrderStatus.DONE;
+                    this.orders[i].done_at = new Date(tradingdata.timestamp);
 
                     this.closedOrders.push(this.orders[i]);
                     this.orders.splice(i, 1);
@@ -35,7 +58,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
 
     public async marketBuyOrder(productId: string, funds: number): Promise<Order> {
-        if ((funds + this.fee) > this.accountFunds) {
+        if ((funds + this.fee) > this.account.balance) {
             throw new Error("There is not enough funds in the account");
         }
         const order = {
@@ -45,7 +68,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             funds,
             type: OrderType.MARKET,
             time_in_force: TimeInForce.GOOD_TILL_CANCEL,
-            created_at: new Date(),
+            created_at: null, // is not relevant for the simulator
             status: OrderStatus.RECEIVED
         } as Order;
 
@@ -55,7 +78,11 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     public async marketSellOrder(productId: string, size: number): Promise<Order> {
         if (size < 0) {
-            throw new Error("");
+            throw new Error("Size must be a value greather than 0");
+        }
+        if (size > this.productQuantity) {
+            throw new Error("There is not enough amount of the current product to sell")
+
         }
         const order = {
             id: uuidv1(),
@@ -93,4 +120,11 @@ export class ExchangeSimulator implements IExchangeSimulator {
     cancellAllOrders() {
         throw new Error('Method not implemented.');
     }
+    getAccount(id: string): Promise<Account> {
+        throw new Error('Method not implemented.');
+    }
+    getAccountHisotory(id: string) {
+        throw new Error('Method not implemented.');
+    }
 }
+

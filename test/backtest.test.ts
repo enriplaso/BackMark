@@ -1,5 +1,10 @@
 import { expect } from 'chai';
 import 'mocha';
+import { Backtest } from '../src/lib/backtest'
+import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
+import { BackTestOptions } from '../src/lib/IBacktest';
+import { SmaStrategy } from '../src/strategies/smaStrategy'
+
 describe('backtest tests', function () {
     //1. Import coingecko-api
     const CoinGecko = require('coingecko-api');
@@ -7,14 +12,12 @@ describe('backtest tests', function () {
     //2. Initiate the CoinGecko API Client
     const CoinGeckoClient = new CoinGecko();
 
-    it('Should ...', async function () {
-        let data = await CoinGeckoClient.coins.fetchMarketChartRange('bitcoin', {
-            from: 1392577232,
-            to: 1422577232,
-        });
+    it.only('Should ...', async function () {
 
-        console.log(data.data.total_volumes[1]);
-        console.log(data.data.prices[2]);
+        const strategy = new SmaStrategy(new ExchangeSimulator(1000, 1));
+        const backTest = new Backtest('./test/data/btcusd_short.csv', strategy);
+
+        await backTest.run();
 
         expect(true).be.true;
     });
