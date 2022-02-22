@@ -9,9 +9,18 @@
             "request": "launch",
             "name": "Launch Unit Tests",
             "trace": true,
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "webRoot": "${workspaceFolder}",
-            "preLaunchTask": "npm: test"
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-r",
+                "ts-node/register",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/**/*.test.ts"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "protocol": "inspector"
         },
     ]
 }
