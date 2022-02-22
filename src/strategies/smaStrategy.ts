@@ -4,12 +4,13 @@ import { ITradingData } from "../lib/models/ITradingData";
 
 export class SmaStrategy implements IStrategy {
 
-    constructor(private exchangeClient: IExchangeClient) { }
+    constructor(private readonly exchangeClient: IExchangeClient) { }
 
     checkPosition(tradingData: ITradingData): Promise<void> {
-        this.exchangeClient.marketBuyOrder('BTC', 10);
+        this.exchangeClient.marketBuyOrder('BTC', 100);
         //throw new Error("Method not implemented.");
         return;
     }
+
 
 }

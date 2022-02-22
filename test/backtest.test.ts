@@ -14,8 +14,10 @@ describe('backtest tests', function () {
 
     it.only('Should ...', async function () {
 
-        const strategy = new SmaStrategy(new ExchangeSimulator(1000, 1));
-        const backTest = new Backtest('./test/data/btcusd_short.csv', strategy);
+        const exchangeSimulator = new ExchangeSimulator(1000, 1);
+
+        const strategy = new SmaStrategy(exchangeSimulator);
+        const backTest = new Backtest('./test/data/btcusd_short.csv', strategy, exchangeSimulator);
 
         await backTest.run();
 

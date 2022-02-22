@@ -3,13 +3,13 @@ import { ITradingData } from './models/ITradingData';
 import { createReadStream } from 'fs';
 import { IStrategy } from './IStrategy';
 import { once } from 'events'
+import { IExchangeSimulator } from './IExchangeSImulator';
 
 export class Backtest implements IBacktest {
 
     private readline = require('readline'); // Nodejs types for readline are missing
 
-    constructor(private tradingDataPath: string, private stategy: IStrategy, private options?: BackTestOptions) { }
-
+    constructor(private tradingDataPath: string, private stategy: IStrategy, private readonly exchangeSimulator: IExchangeSimulator, private options?: BackTestOptions) { }
 
     async run(): Promise<void> {
         try {
@@ -22,15 +22,12 @@ export class Backtest implements IBacktest {
             readInterface.on('line', async (line) => {
                 lines++;
                 if (lines > 1) {
-                    const clumnsArr = line.split(',');
                     console.log(line);
 
-                    const price = (clumnsArr[1] + clumnsArr[2] + clumnsArr[3] + clumnsArr[4]) / 4 // open, close , hight, low.
+                    const tradingData = this.getTradingDataFromLine(line);
 
-                    await this.stategy.checkPosition({ timestamp: parseInt(clumnsArr[0]), price, volume: clumnsArr[5] });
-
-                    //   console.log(new Date(Number.parseInt(clumnsArr[0])));
-
+                    await this.stategy.checkPosition(tradingData);
+                    this.exchangeSimulator.processOrders(tradingData);
                 }
             });
 
@@ -40,6 +37,12 @@ export class Backtest implements IBacktest {
             console.error(error);
         }
 
+    }
+
+    private getTradingDataFromLine(lineData: string): ITradingData {
+        const columnsArr = lineData.split(',').map((e) => parseFloat(e));
+        const price = (columnsArr[1] + columnsArr[2] + columnsArr[3] + columnsArr[4]) / 4; // open, close , hight, low.
+        return { timestamp: columnsArr[0], price, volume: columnsArr[5] };
     }
 }
 
