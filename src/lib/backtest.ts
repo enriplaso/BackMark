@@ -22,10 +22,7 @@ export class Backtest implements IBacktest {
             readInterface.on('line', async (line) => {
                 lines++;
                 if (lines > 1) {
-                    console.log(line);
-
                     const tradingData = this.getTradingDataFromLine(line);
-
                     await this.stategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
                 }
@@ -36,7 +33,6 @@ export class Backtest implements IBacktest {
         } catch (error) {
             console.error(error);
         }
-
     }
 
     private getTradingDataFromLine(lineData: string): ITradingData {

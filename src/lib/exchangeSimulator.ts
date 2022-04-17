@@ -2,7 +2,6 @@ import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IEx
 import { v1 as uuidv1 } from 'uuid';
 import { IExchangeSimulator, Summary } from './IExchangeSImulator';
 import { ITradingData } from './models/ITradingData';
-import { getuid } from 'process';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Array<Order> = [];
@@ -11,7 +10,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private productQuantity = 0; //E.G Bitcoin quantity
 
 
-    constructor(private balance: number, private fee = 1) { }
+    constructor(private balance: number, private fee = 1) {
+        this.init();
+    }
 
     public init() {
         this.account = {
@@ -23,7 +24,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
     }
 
-    getSumary(): Summary {
+    public getSumary(): Summary {
         throw new Error('Method not implemented.');
     }
 
@@ -82,7 +83,6 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
         if (size > this.productQuantity) {
             throw new Error("There is not enough amount of the current product to sell")
-
         }
         const order = {
             id: uuidv1(),
@@ -121,9 +121,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
         throw new Error('Method not implemented.');
     }
     getAccount(id: string): Promise<Account> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve(this.account);
     }
-    getAccountHisotory(id: string) {
+    getAccountHistory(id: string) {
         throw new Error('Method not implemented.');
     }
 }

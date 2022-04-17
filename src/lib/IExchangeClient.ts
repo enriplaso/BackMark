@@ -29,7 +29,7 @@ export interface IExchangeClient {
     cancellAllOrders();
 
     getAccount(id: string): Promise<Account>;
-    getAccountHisotory(id: string);
+    getAccountHistory(id: string);
 }
 
 export enum OrderStatus {
