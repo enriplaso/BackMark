@@ -29,11 +29,16 @@ describe('backtest tests', function () {
         })
 
         const exchangeSimulator = new ExchangeSimulator(1000, 1);
+        let account = await exchangeSimulator.getAccount("e");
+
         const strategy = new SmaStrategy(exchangeSimulator, formatedPreviousData);
         const backTest = new Backtest('./test/data/btcusd_short.csv', strategy, exchangeSimulator);
 
         await backTest.run();
 
+        account = await exchangeSimulator.getAccount("e");
+
+        console.info(account);
         expect(true).be.true;
     });
 });

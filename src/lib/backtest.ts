@@ -15,18 +15,19 @@ export class Backtest implements IBacktest {
         try {
             const readInterface = this.readline.createInterface({
                 input: createReadStream(this.tradingDataPath),
+                crlfDelay: Infinity,
                 console: false
             });
 
             let lines = 0;
-            readInterface.on('line', async (line) => {
+            for await (const line of readInterface) {
                 lines++;
                 if (lines > 1) {
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.stategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
                 }
-            });
+            }
 
             await once(readInterface, 'close');
             console.log('Reading file line by line with readline done.');
