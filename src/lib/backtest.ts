@@ -12,6 +12,9 @@ export class Backtest implements IBacktest {
     constructor(private tradingDataPath: string, private stategy: IStrategy, private readonly exchangeSimulator: IExchangeSimulator, private options?: BackTestOptions) { }
 
     async run(): Promise<void> {
+
+        console.log('Reading file line by line with readline.');
+
         try {
             const readInterface = this.readline.createInterface({
                 input: createReadStream(this.tradingDataPath),
@@ -23,13 +26,13 @@ export class Backtest implements IBacktest {
             for await (const line of readInterface) {
                 lines++;
                 if (lines > 1) {
+                    console.log("line: " + lines);
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.stategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
                 }
             }
 
-            await once(readInterface, 'close');
             console.log('Reading file line by line with readline done.');
         } catch (error) {
             console.error(error);

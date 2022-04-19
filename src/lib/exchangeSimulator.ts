@@ -32,8 +32,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         if (!this.account) {
             this.init();
         }
-
-        for (let i = this.orders.length; i > 0; i--) {
+        for (let i = this.orders.length - 1; i >= 0; i--) {
             switch (this.orders[i].type) {
                 case OrderType.MARKET:
                     if (this.orders[i].side === Side.BUY) {
