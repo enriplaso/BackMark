@@ -2,11 +2,12 @@ import { fail } from 'assert';
 import { expect } from 'chai';
 import 'mocha';
 import { pathToFileURL } from 'url';
-import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
+import { IExchangeSimulator } from '../src/lib/IExchangeSimulator';
 import { IExchangeClient, OrderType, Side, TimeInForce } from '../src/lib/IExchangeClient';
+import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
 
 describe('Exchange Simulator tests', function () {
-    let exchangeSimulator: IExchangeClient;
+    let exchangeSimulator: IExchangeSimulator;
     const PRODUCT_ID = 'BTC-USD';
 
     before(async () => {
@@ -39,7 +40,15 @@ describe('Exchange Simulator tests', function () {
 
 
     it('Should create a market sell order', async function () {
+        const size = 0.5;
+        exchangeSimulator.setProductSize(3);
 
-        expect(true).be.true;
+        const order = await exchangeSimulator.marketSellOrder(PRODUCT_ID, size);
+
+        expect(order.productId).to.equal(PRODUCT_ID);
+        expect(order.side).to.equal(Side.SELL);
+        expect(order.type).to.equal(OrderType.MARKET);
+        expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);
+        expect(order.size).to.equal(size);
     });
 });

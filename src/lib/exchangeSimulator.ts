@@ -1,14 +1,13 @@
 import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
 import { v1 as uuidv1 } from 'uuid';
-import { IExchangeSimulator, Summary } from './IExchangeSImulator';
-import { ITradingData } from './models/ITradingData';
+import { IExchangeSimulator } from './IExchangeSImulator';
+import { ITradingData } from './trade';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Array<Order> = [];
     private closedOrders: Array<Order> = [];
     private account: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
-
 
     constructor(private balance: number, private fee = 1) {
         this.init();
@@ -22,10 +21,6 @@ export class ExchangeSimulator implements IExchangeSimulator {
             available: this.balance,
             currency: "usd"
         }
-    }
-
-    public getSumary(): Summary {
-        throw new Error('Method not implemented.');
     }
 
     public processOrders(tradingdata: ITradingData) {
@@ -77,7 +72,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
 
     public async marketSellOrder(productId: string, size: number): Promise<Order> {
-        if (size < 0) {
+        if (size <= 0) {
             throw new Error("Size must be a value greather than 0");
         }
         if (size > this.productQuantity) {
@@ -114,7 +109,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         throw new Error('Method not implemented.');
     }
     getAllOrders(filter?: OrderStatus[], limit?: number): Promise<Order[]> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve(this.orders);
     }
     cancellAllOrders() {
         throw new Error('Method not implemented.');
@@ -125,5 +120,12 @@ export class ExchangeSimulator implements IExchangeSimulator {
     getAccountHistory(id: string) {
         throw new Error('Method not implemented.');
     }
+    getProductSize(): number {
+        return this.productQuantity;
+    }
+    setProductSize(size: number) {
+        this.productQuantity = size;
+    }
+
 }
 

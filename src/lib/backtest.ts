@@ -1,8 +1,7 @@
 import { IBacktest, BackTestOptions } from './IBacktest';
-import { ITradingData } from './models/ITradingData';
+import { ITradingData } from './trade';
 import { createReadStream } from 'fs';
-import { IStrategy } from './IStrategy';
-import { once } from 'events'
+import { IStrategy } from '../strategies/IStrategy';
 import { IExchangeSimulator } from './IExchangeSImulator';
 
 export class Backtest implements IBacktest {

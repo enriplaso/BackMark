@@ -1,5 +1,5 @@
-import { IExchangeClient } from "./IExchangeClient";
-import { ITradingData } from "./models/ITradingData";
+import { Account, IExchangeClient } from "./IExchangeClient";
+import { ITradingData } from "./trade";
 
 export interface IExchangeSimulator extends IExchangeClient {
     /**
@@ -8,23 +8,7 @@ export interface IExchangeSimulator extends IExchangeClient {
      */
     processOrders(tradingdata: ITradingData);
 
-    getSumary(): Summary;
+    setProductSize(size: number);
 }
 
 //https://usenobi.com/blog/how-to-understand-backtest-result/
-export interface Summary {
-    productId: string;
-    productCuantity: number;
-    accountFunds: number;
-    netProfit: number;
-    totalClosedTrades: number;
-    startDate: Date;
-    endDate: Date;
-    percentProfitable: number;
-    profitFactor: number;
-}
-
-
-export interface product {
-
-}

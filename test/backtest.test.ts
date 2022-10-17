@@ -4,17 +4,17 @@ import 'mocha';
 import { Backtest } from '../src/lib/backtest'
 import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
 import { BackTestOptions } from '../src/lib/IBacktest';
-import { ITradingData } from '../src/lib/models/ITradingData';
+import { ITradingData } from '../src/lib/trade';
 import { SmaStrategy } from '../src/strategies/smaStrategy'
 // Data from https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution
-describe('backtest tests', function () {
+describe.only('backtest tests', function () {
     //1. Import coingecko-api
     const CoinGecko = require('coingecko-api');
 
     //2. Initiate the CoinGecko API Client
     const coinGeckoClient = new CoinGecko();
 
-    it.only('Should ...', async function () {
+    it('Should ...', async function () {
 
         const from = Math.floor(new Date('2021-01-01').getTime() / 1000); //UNIX timestamp
         const to = Math.floor(new Date('2022-01-29').getTime() / 1000); // Fist day or our demo data
@@ -37,6 +37,9 @@ describe('backtest tests', function () {
         await backTest.run();
 
         account = await exchangeSimulator.getAccount("e");
+
+        const productSize = exchangeSimulator.getProductSize();
+        console.info(productSize);
 
         console.info(account);
         expect(true).be.true;
