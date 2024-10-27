@@ -2,9 +2,9 @@ import { fail } from 'assert';
 import { expect } from 'chai';
 import 'mocha';
 import { pathToFileURL } from 'url';
-import { IExchangeSimulator } from '../src/lib/IExchangeSimulator';
 import { IExchangeClient, OrderType, Side, TimeInForce } from '../src/lib/IExchangeClient';
 import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
+import { IExchangeSimulator } from '../src/lib/IExchangeSImulator';
 
 describe('Exchange Simulator tests', function () {
     let exchangeSimulator: IExchangeSimulator;
