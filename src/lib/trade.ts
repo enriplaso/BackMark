@@ -5,9 +5,9 @@ export interface ITradingData {
 }
 
 export interface ITrade {
-    entryTime: Date;
-    closeTime: Date;
+    entryTime: number;
     entryPrice: number;
-    closePrice: number;
-    netProfit: number;
+    closeTime?: number;
+    closePrice?: number;
+    netProfit?: number;
 }

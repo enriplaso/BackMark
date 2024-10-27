@@ -1,13 +1,15 @@
 import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
 import { v1 as uuidv1 } from 'uuid';
 import { IExchangeSimulator } from './IExchangeSImulator';
-import { ITradingData } from './trade';
+import { ITrade, ITradingData } from './trade';
 
 export class ExchangeSimulator implements IExchangeSimulator {
-    private orders: Array<Order> = [];
-    private closedOrders: Array<Order> = [];
+    private orders = [];
+    private trades = [];
+    private closedOrders = [];
     private account: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
+    private currentTrade: ITrade;
 
     constructor(private balance: number, private fee = 1) {
         this.init();
@@ -33,15 +35,36 @@ export class ExchangeSimulator implements IExchangeSimulator {
                     if (this.orders[i].side === Side.BUY) {
                         this.account.balance = this.account.balance - this.orders[i].funds - this.fee;
                         this.productQuantity = this.productQuantity + (this.orders[i].funds - this.fee) / tradingdata.price;
+                        if (this.currentTrade) {
+                            this.currentTrade.entryPrice = this.currentTrade.entryPrice + tradingdata.price;
+                        } else {
+                            this.currentTrade = {
+                                entryTime: tradingdata.timestamp,
+                                entryPrice: tradingdata.price
+                            }
+
+                        }
+
                     }
                     if (this.orders[i].side === Side.SELL) {
                         this.account.balance = this.account.balance + tradingdata.price - this.fee;
                         this.productQuantity = this.productQuantity - (this.orders[i].funds - this.fee) / tradingdata.price;
+                        // trade
+                        if (this.currentTrade) {
+                            this.currentTrade.closePrice = tradingdata.price;
+                            this.currentTrade.closeTime = tradingdata.timestamp;
+                            this.currentTrade.netProfit = 30;
+                            this.trades.push(this.currentTrade);
+                            this.currentTrade = null;
+                        }
+
                     }
                     this.orders[i].status = OrderStatus.DONE;
                     this.orders[i].done_at = new Date(tradingdata.timestamp);
 
                     this.closedOrders.push(this.orders[i]);
+
+
                     this.orders.splice(i, 1);
                     break;
                 case OrderType.LIMIT:

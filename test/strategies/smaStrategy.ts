@@ -1,8 +1,8 @@
 import { argv } from "process";
 import { FasterSMA, SMA } from "trading-signals";
-import { IExchangeClient } from "../lib/IExchangeClient";
-import { IStrategy } from "./IStrategy";
-import { ITradingData } from "../lib/trade";
+import { IExchangeClient } from "../../src/lib/IExchangeClient";
+import { IStrategy } from "../../src/lib/IStrategy";
+import { ITradingData } from "../../src/lib/trade";
 
 const SMA_DAYS = 10;
 

@@ -5,7 +5,7 @@ import { Backtest } from '../src/lib/backtest'
 import { ExchangeSimulator } from '../src/lib/exchangeSimulator';
 import { BackTestOptions } from '../src/lib/IBacktest';
 import { ITradingData } from '../src/lib/trade';
-import { SmaStrategy } from '../src/strategies/smaStrategy'
+import { SmaStrategy } from './strategies/smaStrategy'
 // Data from https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution
 describe.only('backtest tests', function () {
     //1. Import coingecko-api
