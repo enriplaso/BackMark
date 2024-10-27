@@ -12,6 +12,7 @@ export class SmaStrategy implements IStrategy {
     private accumulatedDailyPrices: number[];
     private previusData: ITradingData;
     private daysCount: number;
+    private hasTradedToday = false;
 
     constructor(private readonly exchangeClient: IExchangeClient) {
         this.sma = new FasterSMA(SMA_DAYS);
@@ -39,20 +40,25 @@ export class SmaStrategy implements IStrategy {
 
             this.previusData = tradingData;
             this.daysCount++;
+            this.hasTradedToday = false;
         }
 
         if (this.daysCount <= SMA_DAYS) {
             return;
         }
+        if (!this.hasTradedToday) {
+            if (tradingData.price < this.sma.getResult() - this.sma.getResult() * 0.01) { // at less 20% less 
+                this.exchangeClient.marketBuyOrder('BTC', account.balance * 0.1);
+            }
 
-        // Enter Positon
-        if (tradingData.price < this.sma.getResult()) {
-            this.exchangeClient.marketBuyOrder('BTC', account.balance * 0.1);
+            if (tradingData.price > this.sma.getResult()) {
+                const bitcoin = this.exchangeClient.getProductSize('BTC');
+                this.exchangeClient.marketSellOrder('BTC', bitcoin * 0.8);
+            }
+
+            this.hasTradedToday = true;
         }
 
-        if (tradingData.price > this.sma.getResult()) {
-            this.exchangeClient.marketSellOrder('BTC', account.holds * 0.1);
-        }
         return;
     }
 

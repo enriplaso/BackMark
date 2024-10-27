@@ -30,6 +30,7 @@ export interface IExchangeClient {
 
     getAccount(id: string): Promise<Account>;
     getAccountHistory(id: string);
+    getProductSize(productId: string): number;
 }
 
 export enum OrderStatus {

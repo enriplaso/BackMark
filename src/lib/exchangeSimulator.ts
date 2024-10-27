@@ -47,8 +47,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
                     }
                     if (this.orders[i].side === Side.SELL) {
-                        this.account.balance = this.account.balance + tradingdata.price - this.fee;
-                        this.productQuantity = this.productQuantity - (this.orders[i].funds - this.fee) / tradingdata.price;
+                        this.account.balance = this.account.balance + (this.orders[i].size * tradingdata.price) - this.fee;
+                        this.productQuantity = this.productQuantity - this.orders[i].size;
                         // trade
                         if (this.currentTrade) {
                             this.currentTrade.closePrice = tradingdata.price;
