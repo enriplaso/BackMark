@@ -1,4 +1,4 @@
-import { IBacktest, BackTestOptions } from './IBacktest';
+import { IBacktest, BackTestOptions, BackTestResult } from './IBacktest';
 import { ITradingData } from './trade';
 import { createReadStream } from 'fs';
 import { IStrategy } from './IStrategy';
@@ -11,7 +11,7 @@ export class Backtest implements IBacktest {
     constructor(private tradingDataPath: string, private stategy: IStrategy, private readonly exchangeSimulator: IExchangeSimulator, private options?: BackTestOptions) { }
 
     async run(): Promise<void> {
-
+        console.time('backtest-time:');
         console.log('Reading file line by line with readline.');
 
         try {
@@ -25,18 +25,29 @@ export class Backtest implements IBacktest {
             for await (const line of readInterface) {
                 lines++;
                 if (lines > 1) {
-                    console.log("line: " + lines);
+
+                    process.stdout.clearLine(0);
+                    process.stdout.cursorTo(0);
+                    process.stdout.write(`line: ${lines}`);
+
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.stategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
                 }
             }
 
-            console.log('Reading file line by line with readline done.');
+            process.stdout.write(`\n`);
+            console.log('Reading file line by line with readline done with');
+            console.timeEnd('backtest-time:');
         } catch (error) {
             console.error(error);
         }
     }
+
+    getResult(): BackTestResult {
+        throw new Error('Method not implemented.');
+    }
+
 
     private getTradingDataFromLine(lineData: string): ITradingData {
         const columnsArr = lineData.split(',').map((e) => parseFloat(e));

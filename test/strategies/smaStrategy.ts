@@ -4,7 +4,7 @@ import { IExchangeClient } from "../../src/lib/IExchangeClient";
 import { IStrategy } from "../../src/lib/IStrategy";
 import { ITradingData } from "../../src/lib/trade";
 
-const SMA_DAYS = 3;
+const SMA_DAYS = 2;
 
 export class SmaStrategy implements IStrategy {
 
@@ -24,6 +24,9 @@ export class SmaStrategy implements IStrategy {
 
         const account = await this.exchangeClient.getAccount("ID_XXX");
 
+        if (account.balance <= 0) {
+            return;
+        }
         // pass sma days (wee need some days to calcule SMA (i))
 
         this.accumulatedDailyPrices.push(tradingData.price);
@@ -47,13 +50,13 @@ export class SmaStrategy implements IStrategy {
             return;
         }
         if (!this.hasTradedToday) {
-            if (tradingData.price < this.sma.getResult() - this.sma.getResult() * 0.01) { // at less 20% less 
-                this.exchangeClient.marketBuyOrder('BTC', account.balance * 0.1);
+            if (tradingData.price < this.sma.getResult() - this.sma.getResult() * 0.03) { // at less 20% less 
+                this.exchangeClient.marketBuyOrder('BTC', account.balance * 0.5);
             }
 
-            if (tradingData.price > this.sma.getResult()) {
+            if (tradingData.price > this.sma.getResult() + this.sma.getResult() * 0.02) {
                 const bitcoin = this.exchangeClient.getProductSize('BTC');
-                this.exchangeClient.marketSellOrder('BTC', bitcoin * 0.8);
+                this.exchangeClient.marketSellOrder('BTC', bitcoin);
             }
 
             this.hasTradedToday = true;

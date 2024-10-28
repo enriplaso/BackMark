@@ -1,5 +1,4 @@
 import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
-import { v1 as uuidv1 } from 'uuid';
 import { IExchangeSimulator } from './IExchangeSImulator';
 import { ITrade, ITradingData } from './trade';
 
@@ -17,7 +16,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     public init() {
         this.account = {
-            id: uuidv1(),
+            id: this.generateRandomId(),
             balance: this.balance,
             holds: 0,
             available: this.balance,
@@ -80,7 +79,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error("There is not enough funds in the account");
         }
         const order = {
-            id: uuidv1(),
+            id: this.generateRandomId(),
             productId,
             side: Side.BUY,
             funds,
@@ -102,7 +101,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error("There is not enough amount of the current product to sell")
         }
         const order = {
-            id: uuidv1(),
+            id: this.generateRandomId(),
             productId,
             side: Side.SELL,
             size,
@@ -148,6 +147,10 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
     setProductSize(size: number) {
         this.productQuantity = size;
+    }
+
+    private generateRandomId(): string {
+        return (Math.floor(Math.random() * 9000000) + 1000000).toString();
     }
 
 }
