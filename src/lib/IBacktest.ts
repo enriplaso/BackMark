@@ -1,4 +1,3 @@
-
 export interface IBacktest {
     run(): Promise<void>;
 
@@ -6,11 +5,11 @@ export interface IBacktest {
 }
 
 export type BackTestResult = {
-    product: string,
-    size: number
-}
+    product: string;
+    size: number;
+};
 
 export type BackTestOptions = {
     startDate?: Date;
     endDate?: Date;
-}
+};

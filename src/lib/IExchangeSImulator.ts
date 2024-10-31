@@ -1,14 +1,14 @@
-import { Account, IExchangeClient } from "./IExchangeClient";
-import { ITradingData } from "./trade";
+import { IExchangeClient } from './IExchangeClient.js';
+import { ITradingData } from './trade.js';
 
 export interface IExchangeSimulator extends IExchangeClient {
     /**
-     * 
-     * @param tradingdata 
+     *
+     * @param tradingdata
      */
-    processOrders(tradingdata: ITradingData);
+    processOrders(tradingdata: ITradingData): void;
 
-    setProductSize(size: number);
+    setProductSize(size: number): void;
 }
 
 //https://usenobi.com/blog/how-to-understand-backtest-result/

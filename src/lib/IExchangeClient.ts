@@ -1,24 +1,21 @@
-import exp = require('constants');
-
 /**
  * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
  * https://github.com/danpaquin/coinbasepro-python/blob/master/cbpro/authenticated_client.py
  */
 export interface IExchangeClient {
-
     /**
      * Creates a buy order that should be filled at current market price
      * @param productId must match a valid product eg: BTC-USD
      * @param funds is the ammount of currency you want to buy in USD (eg: 1000)
      */
-    marketBuyOrder(productId: string, funds: number): Promise<Order>;
+    marketBuyOrder(productId: string, funds: number): Order;
 
     /**
      * Creates a Sell order that should be filled at current market price
      * @param productId must match a valid product eg: BTC-USD
      * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
      */
-    marketSellOrder(productId: string, size: number): Promise<Order>;
+    marketSellOrder(productId: string, size: number): Order;
 
     limitBuyOrder(productId: string): Promise<Order>;
     limitSellOrder(productId: string): Promise<Order>;
@@ -26,10 +23,10 @@ export interface IExchangeClient {
     stopLossOrder(productId: string): Promise<Order>;
     cancelOrder(id: string): Promise<boolean>;
     getAllOrders(filter?: Array<OrderStatus>, limit?: number): Promise<Array<Order>>;
-    cancellAllOrders();
+    cancellAllOrders(): void;
 
     getAccount(id: string): Promise<Account>;
-    getAccountHistory(id: string);
+    getAccountHistory(id: string): void;
     getProductSize(productId: string): number;
 }
 
@@ -67,7 +64,7 @@ export enum Stop {
 
 export enum Side {
     BUY = 'buy',
-    SELL = 'Sell'
+    SELL = 'Sell',
 }
 
 // Entry type indicates the reason for the account change.
@@ -75,7 +72,7 @@ export enum EntryType {
     TRANSFER = 'transfer', // Funds moved to/from Coinbase to cbpro
     MATCH = 'match', // Funds moved as a result of a trade
     FEE = 'fee', //Fee as a result of a trade
-    REBATE = 'rebate' //Fee rebate as per our fee schedule
+    REBATE = 'rebate', //Fee rebate as per our fee schedule
 }
 
 export interface Order {
@@ -84,7 +81,7 @@ export interface Order {
     size?: number; // amount of base currency to buy/sell
     productId: string; // book the order was placed on
     profile_id?: string; // rofile_id that placed the order
-    side?: Side;  // buy or sell
+    side?: Side; // buy or sell
     funds?: number; //amount of quote currency to spend (for market orders)
     specified_funds?: string; //funds with fees
     type?: OrderType;
@@ -106,22 +103,20 @@ export interface Order {
 }
 
 export interface Account {
-    id: string,
-    balance: number,
-    holds: number, // Amount of cash hold in pending order
-    available: number, // how much you can cash out
-    currency: string,
+    id: string;
+    balance: number;
+    holds: number; // Amount of cash hold in pending order
+    available: number; // how much you can cash out
+    currency: string;
 }
 
-
 export interface AccountHistory {
-    id: string
-    ccreated_at: Date,
-    amount: number,
-    balance: number,
-    type: EntryType,
-    details: AccountHistoryDetails,
-
+    id: string;
+    ccreated_at: Date;
+    amount: number;
+    balance: number;
+    type: EntryType;
+    details: AccountHistoryDetails;
 }
 
 export interface AccountHistoryDetails {
@@ -129,4 +124,3 @@ export interface AccountHistoryDetails {
     product_id: string;
     trade_id: string;
 }
-

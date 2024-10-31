@@ -1,16 +1,19 @@
-import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient';
-import { IExchangeSimulator } from './IExchangeSImulator';
-import { ITrade, ITradingData } from './trade';
+import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient.js';
+import { IExchangeSimulator } from './IExchangeSImulator.js';
+import { ITrade, ITradingData } from './trade.js';
 
 export class ExchangeSimulator implements IExchangeSimulator {
-    private orders = [];
-    private trades = [];
-    private closedOrders = [];
-    private account: Account;
+    private orders: Order[] = [];
+    private trades: ITrade[] = [];
+    private closedOrders: Order[] = [];
+    private account!: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
-    private currentTrade: ITrade;
+    private currentTrade: ITrade | undefined | null;
 
-    constructor(private balance: number, private fee = 1) {
+    constructor(
+        private balance: number,
+        private fee = 1,
+    ) {
         this.init();
     }
 
@@ -20,8 +23,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
             balance: this.balance,
             holds: 0,
             available: this.balance,
-            currency: "usd"
-        }
+            currency: 'usd',
+        };
     }
 
     public processOrders(tradingdata: ITradingData) {
@@ -32,22 +35,20 @@ export class ExchangeSimulator implements IExchangeSimulator {
             switch (this.orders[i].type) {
                 case OrderType.MARKET:
                     if (this.orders[i].side === Side.BUY) {
-                        this.account.balance = this.account.balance - this.orders[i].funds - this.fee;
-                        this.productQuantity = this.productQuantity + (this.orders[i].funds - this.fee) / tradingdata.price;
+                        this.account.balance = this.account.balance - this.orders[i].funds! - this.fee;
+                        this.productQuantity = this.productQuantity + (this.orders[i].funds! - this.fee) / tradingdata.price;
                         if (this.currentTrade) {
                             this.currentTrade.entryPrice = this.currentTrade.entryPrice + tradingdata.price;
                         } else {
                             this.currentTrade = {
                                 entryTime: tradingdata.timestamp,
-                                entryPrice: tradingdata.price
-                            }
-
+                                entryPrice: tradingdata.price,
+                            };
                         }
-
                     }
                     if (this.orders[i].side === Side.SELL) {
-                        this.account.balance = this.account.balance + (this.orders[i].size * tradingdata.price) - this.fee;
-                        this.productQuantity = this.productQuantity - this.orders[i].size;
+                        this.account.balance = this.account.balance + this.orders[i].size! * tradingdata.price - this.fee;
+                        this.productQuantity = this.productQuantity - this.orders[i].size!;
                         // trade
                         if (this.currentTrade) {
                             this.currentTrade.closePrice = tradingdata.price;
@@ -56,13 +57,11 @@ export class ExchangeSimulator implements IExchangeSimulator {
                             this.trades.push(this.currentTrade);
                             this.currentTrade = null;
                         }
-
                     }
                     this.orders[i].status = OrderStatus.DONE;
                     this.orders[i].done_at = new Date(tradingdata.timestamp);
 
                     this.closedOrders.push(this.orders[i]);
-
 
                     this.orders.splice(i, 1);
                     break;
@@ -74,9 +73,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
     }
 
-    public async marketBuyOrder(productId: string, funds: number): Promise<Order> {
-        if ((funds + this.fee) > this.account.balance) {
-            throw new Error("There is not enough funds in the account");
+    public marketBuyOrder(productId: string, funds: number): Order {
+        if (funds + this.fee > this.account.balance) {
+            throw new Error('There is not enough funds in the account');
         }
         const order = {
             id: this.generateRandomId(),
@@ -86,19 +85,19 @@ export class ExchangeSimulator implements IExchangeSimulator {
             type: OrderType.MARKET,
             time_in_force: TimeInForce.GOOD_TILL_CANCEL,
             created_at: null, // is not relevant for the simulator
-            status: OrderStatus.RECEIVED
-        } as Order;
+            status: OrderStatus.RECEIVED,
+        } as unknown as Order;
 
         this.orders.push(order);
         return order;
     }
 
-    public async marketSellOrder(productId: string, size: number): Promise<Order> {
+    public marketSellOrder(productId: string, size: number): Order {
         if (size <= 0) {
-            throw new Error("Size must be a value greather than 0");
+            throw new Error('Size must be a value greather than 0');
         }
         if (size > this.productQuantity) {
-            throw new Error("There is not enough amount of the current product to sell")
+            throw new Error('There is not enough amount of the current product to sell');
         }
         const order = {
             id: this.generateRandomId(),
@@ -108,7 +107,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             type: OrderType.MARKET,
             time_in_force: TimeInForce.GOOD_TILL_CANCEL,
             created_at: new Date(),
-            status: OrderStatus.RECEIVED
+            status: OrderStatus.RECEIVED,
         } as Order;
 
         this.orders.push(order);
@@ -152,6 +151,4 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private generateRandomId(): string {
         return (Math.floor(Math.random() * 9000000) + 1000000).toString();
     }
-
 }
-

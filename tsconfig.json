@@ -1,13 +1,19 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "ES2015",
+    "module": "ESNext",
+    "target": "ES2021",
     "declaration": true,
     "sourceMap": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "moduleResolution": "Node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true
   },
   "include": [
     "src/**/*",
-    "test/strategies/smaStrategy.ts"
-  ]
+  ],
+  "exclude": ["./test/**/**/*.test.ts"]
 }

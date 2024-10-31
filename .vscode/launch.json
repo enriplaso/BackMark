@@ -13,14 +13,15 @@
             "args": [
                 "-r",
                 "ts-node/register",
-                "--timeout",
-                "999999",
-                "--colors",
-                "${workspaceFolder}/**/*.test.ts"
+                "--no-timeouts",
+                "test/**/*.test.ts",
+                "-extension", "ts"
             ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "protocol": "inspector"
+            "runtimeArgs": [
+                "--loader", 
+                "ts-node/esm",
+                "--no-warnings"
+            ]
         },
     ]
 }

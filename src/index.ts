@@ -1,2 +1,1 @@
-console.info("Hello");
-
+console.info('Hello');

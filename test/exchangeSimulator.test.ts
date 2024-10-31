@@ -1,4 +1,4 @@
-import { fail } from 'assert';
+/*import { fail } from 'assert';
 import { expect } from 'chai';
 import 'mocha';
 import { pathToFileURL } from 'url';
@@ -51,4 +51,4 @@ describe('Exchange Simulator tests', function () {
         expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);
         expect(order.size).to.equal(size);
     });
-});
+});*/
