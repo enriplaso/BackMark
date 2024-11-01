@@ -95,7 +95,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     public marketSellOrder(productId: string, size: number): Order {
         if (size <= 0) {
-            throw new Error('Size must be a value greather than 0');
+            throw new Error('Size must be a value greater than 0');
         }
         if (size > this.productQuantity) {
             throw new Error('There is not enough amount of the current product to sell');
@@ -115,11 +115,58 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         return order;
     }
-    limitBuyOrder(productId: string): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public limitBuyOrder(productId: string, price: number, funds: number): Order {
+        if (funds + this.fee > this.account.balance) {
+            throw new Error('There is not enough funds in the account');
+        }
+        if (price <= 0) {
+            throw new Error('Price must be greater than 0');
+        }
+
+        const order = {
+            id: this.generateRandomId(),
+            productId,
+            side: Side.BUY,
+            funds,
+            type: OrderType.LIMIT,
+            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
+            price,
+            created_at: null, // is not relevant for the simulator
+            status: OrderStatus.RECEIVED,
+        } as unknown as Order;
+
+        this.orders.push(order);
+
+        return order;
     }
-    limitSellOrder(productId: string): Promise<Order> {
-        throw new Error('Method not implemented.');
+    public limitSellOrder(productId: string, price: number, size: number): Order {
+        if (size <= 0) {
+            throw new Error('Size must be a value greater than 0');
+        }
+
+        if (size > this.productQuantity) {
+            throw new Error('There is not enough amount of the current product to sell');
+        }
+
+        if (price <= 0) {
+            throw new Error('Price must be greater than 0');
+        }
+
+        const order = {
+            id: this.generateRandomId(),
+            productId,
+            side: Side.SELL,
+            size,
+            type: OrderType.LIMIT,
+            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
+            created_at: new Date(),
+            status: OrderStatus.RECEIVED,
+            price,
+        } as Order;
+
+        this.orders.push(order);
+
+        return order;
     }
     stopEntryOrder(productId: string): Promise<Order> {
         throw new Error('Method not implemented.');

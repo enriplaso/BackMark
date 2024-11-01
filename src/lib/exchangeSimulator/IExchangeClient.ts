@@ -18,8 +18,14 @@ export interface IExchangeClient {
      * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
      */
     marketSellOrder(productId: string, size: number): Order;
-    limitBuyOrder(productId: string): Promise<Order>;
-    limitSellOrder(productId: string): Promise<Order>;
+    /**
+     *
+     * @param productId
+     * @param price
+     * @param funds
+     */
+    limitBuyOrder(productId: string, price: number, funds: number): Order;
+    limitSellOrder(productId: string, price: number, size: number): Order;
     stopEntryOrder(productId: string): Promise<Order>;
     stopLossOrder(productId: string): Promise<Order>;
     cancelOrder(id: string): Promise<boolean>;

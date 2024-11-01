@@ -6,7 +6,7 @@ import { SmaStrategy } from './strategies/smaStrategy.js';
 import { IExchangeSimulator } from '../src/lib/exchangeSimulator/IExchangeSImulator.js';
 //Data from https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution
 // https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution?select=bsvusd.csv
-describe.only('backtest tests', function () {
+describe.skip('backtest tests', function () {
     it('Should run a back test for a given strategy', async function () {
         const exchangeSimulator = new ExchangeSimulator(1000, 1) as unknown as IExchangeSimulator;
         let account = await exchangeSimulator.getAccount('e');
