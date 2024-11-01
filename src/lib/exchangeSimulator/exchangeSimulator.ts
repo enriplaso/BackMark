@@ -1,14 +1,15 @@
-import { Account, Order, OrderStatus, OrderType, Side, TimeInForce } from './IExchangeClient.js';
-import { IExchangeSimulator } from './IExchangeSImulator.js';
-import { ITrade, ITradingData } from './trade.js';
+import type { Account, Order } from './types.js';
+import type { IExchangeSimulator } from './IExchangeSImulator.js';
+import type { Trade, TradingData } from './types.js';
+import { OrderStatus, OrderType, Side, TimeInForce } from './types.js';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Order[] = [];
-    private trades: ITrade[] = [];
+    private trades: Trade[] = [];
     private closedOrders: Order[] = [];
     private account!: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
-    private currentTrade: ITrade | undefined | null;
+    private currentTrade: Trade | undefined | null;
 
     constructor(
         private balance: number,
@@ -27,7 +28,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         };
     }
 
-    public processOrders(tradingdata: ITradingData) {
+    public processOrders(tradingdata: TradingData) {
         if (!this.account) {
             this.init();
         }
@@ -132,7 +133,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     getAllOrders(filter?: OrderStatus[], limit?: number): Promise<Order[]> {
         return Promise.resolve(this.orders);
     }
-    cancellAllOrders() {
+    cancelAllOrders() {
         throw new Error('Method not implemented.');
     }
     getAccount(id: string): Promise<Account> {

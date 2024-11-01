@@ -1,12 +1,12 @@
-import { IExchangeClient } from './IExchangeClient.js';
-import { ITradingData } from './trade.js';
+import type { TradingData } from './types.js';
+import type { IExchangeClient } from './IExchangeClient.js';
 
 export interface IExchangeSimulator extends IExchangeClient {
     /**
      *
-     * @param tradingdata
+     * @param tradingData
      */
-    processOrders(tradingdata: ITradingData): void;
+    processOrders(tradingData: TradingData): void;
 
     setProductSize(size: number): void;
 }

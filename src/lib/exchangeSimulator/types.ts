@@ -1,35 +1,3 @@
-/**
- * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
- * https://github.com/danpaquin/coinbasepro-python/blob/master/cbpro/authenticated_client.py
- */
-export interface IExchangeClient {
-    /**
-     * Creates a buy order that should be filled at current market price
-     * @param productId must match a valid product eg: BTC-USD
-     * @param funds is the ammount of currency you want to buy in USD (eg: 1000)
-     */
-    marketBuyOrder(productId: string, funds: number): Order;
-
-    /**
-     * Creates a Sell order that should be filled at current market price
-     * @param productId must match a valid product eg: BTC-USD
-     * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
-     */
-    marketSellOrder(productId: string, size: number): Order;
-
-    limitBuyOrder(productId: string): Promise<Order>;
-    limitSellOrder(productId: string): Promise<Order>;
-    stopEntryOrder(productId: string): Promise<Order>;
-    stopLossOrder(productId: string): Promise<Order>;
-    cancelOrder(id: string): Promise<boolean>;
-    getAllOrders(filter?: Array<OrderStatus>, limit?: number): Promise<Array<Order>>;
-    cancellAllOrders(): void;
-
-    getAccount(id: string): Promise<Account>;
-    getAccountHistory(id: string): void;
-    getProductSize(productId: string): number;
-}
-
 export enum OrderStatus {
     OPEN = 'open', // Limit order exists on the order book
     PENDING = 'pending', //Order compleated but will be pending until there have been enough network confirmations (e.g by miners)
@@ -39,7 +7,6 @@ export enum OrderStatus {
     RECEIVED = 'receved', // Order received and not yet processed by the trading engine
     ALL = 'all',
 }
-
 export enum TimeInForce {
     GOOD_TILL_CANCEL = 'GTC', // Good till canceled orders remain open on the book until canceled. (Default)
     GOOD_TILL_TIME = 'GTT', // Good till time orders remain open on the book until canceled or the allotted cancel_after is depleted on the matching engine
@@ -47,7 +14,7 @@ export enum TimeInForce {
     FILL_OR_KILL = 'FOK', // Fill or kill orders are rejected if the entire size cannot be matched.
 }
 
-export enum cancel_after {
+export enum CancelAfter {
     MIN = 'min',
     HOUR = 'hour',
     DAY = 'day', // Order will be cancelled in 24 hours
@@ -75,7 +42,7 @@ export enum EntryType {
     REBATE = 'rebate', //Fee rebate as per our fee schedule
 }
 
-export interface Order {
+export type Order = {
     id: string;
     price?: number; //price per unit of base currency
     size?: number; // amount of base currency to buy/sell
@@ -100,27 +67,41 @@ export interface Order {
     stop?: Stop;
     stop_price?: number; // price (in quote currency) at which to execute the order
     funding_amount?: number; // Amount of margin funding to be rovided for the order
-}
+};
 
-export interface Account {
+export type Account = {
     id: string;
     balance: number;
     holds: number; // Amount of cash hold in pending order
     available: number; // how much you can cash out
     currency: string;
-}
+};
 
-export interface AccountHistory {
+export type AccountHistory = {
     id: string;
     ccreated_at: Date;
     amount: number;
     balance: number;
     type: EntryType;
     details: AccountHistoryDetails;
-}
+};
 
-export interface AccountHistoryDetails {
+export type AccountHistoryDetails = {
     order_id: string;
     product_id: string;
     trade_id: string;
-}
+};
+
+export type TradingData = {
+    timestamp: number;
+    price: number;
+    volume?: number;
+};
+
+export type Trade = {
+    entryTime: number;
+    entryPrice: number;
+    closeTime?: number;
+    closePrice?: number;
+    netProfit?: number;
+};

@@ -1,16 +1,14 @@
-import { argv } from 'process';
-import { FasterSMA, SMA } from 'trading-signals';
-import { IExchangeClient } from '../../src/lib/IExchangeClient.js';
-import { IStrategy } from '../../src/lib/IStrategy.js';
-import { ITradingData } from '../../src/lib/trade.js';
-import { IExchangeSimulator } from '../../src/lib/IExchangeSImulator.js';
+import type { IStrategy } from '../../src/lib/IStrategy.js';
+import type { IExchangeSimulator } from '../../src/lib/exchangeSimulator/IExchangeSImulator.js';
+import type { TradingData } from '../../src/lib/exchangeSimulator/types.js';
+import { FasterSMA } from 'trading-signals';
 
 const SMA_DAYS = 2;
 
 export class SmaStrategy implements IStrategy {
     private sma: FasterSMA;
     private accumulatedDailyPrices: number[];
-    private previusData: ITradingData | undefined = undefined;
+    private previusData: TradingData | undefined = undefined;
     private daysCount: number;
     private hasTradedToday = false;
 
@@ -20,7 +18,7 @@ export class SmaStrategy implements IStrategy {
         this.daysCount = 0;
     }
 
-    async checkPosition(tradingData: ITradingData): Promise<void> {
+    async checkPosition(tradingData: TradingData): Promise<void> {
         const account = await this.exchangeClient.getAccount('ID_XXX');
 
         if (account.balance <= 0) {

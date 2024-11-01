@@ -1,5 +1,5 @@
-import { ITradingData } from './trade.js';
+import { TradingData } from './exchangeSimulator/types.js';
 
 export interface IStrategy {
-    checkPosition(tradingData: ITradingData): Promise<void>;
+    checkPosition(tradingData: TradingData): Promise<void>;
 }
