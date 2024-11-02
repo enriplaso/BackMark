@@ -58,7 +58,9 @@ export class SmaStrategy implements IStrategy {
 
             if (tradingData.price > this.sma.getResult() + this.sma.getResult() * 0.02) {
                 const bitcoin = this.exchangeClient.getProductSize('BTC');
-                this.exchangeClient.marketSellOrder('BTC', bitcoin);
+                if (bitcoin > 0) {
+                    this.exchangeClient.marketSellOrder('BTC', bitcoin);
+                }
             }
 
             this.hasTradedToday = true;

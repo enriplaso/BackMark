@@ -32,6 +32,8 @@ export class BackTest implements IBackTest {
                     //process.stdout.cursorTo(0);
                     //process.stdout.write(`line: ${lines}`);
 
+                    console.log(`line: ${lines}`);
+
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.strategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
