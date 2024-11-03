@@ -19,7 +19,7 @@ export class SmaStrategy implements IStrategy {
     }
 
     async checkPosition(tradingData: TradingData): Promise<void> {
-        const account = await this.exchangeClient.getAccount('ID_XXX');
+        const account = await this.exchangeClient.getAccount();
 
         if (account.balance <= 0) {
             return;

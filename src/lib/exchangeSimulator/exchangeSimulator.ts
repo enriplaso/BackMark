@@ -1,7 +1,7 @@
 import type { Account, Order, SimulationOptions } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
 import type { Trade, TradingData } from './types.js';
-import { OrderStatus, OrderType, Side, TimeInForce } from './types.js';
+import { OrderStatus, OrderType, Side, Stop, TimeInForce } from './types.js';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Order[] = [];
@@ -139,7 +139,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
     public limitSellOrder(price: number, size: number): Order {
         if (size <= 0) {
-            throw new Error('Size must be a value greater than 0');
+            throw new Error('Size must be a value greater than 0'); // TODO: refactor to Typescript assertions
         }
 
         if (size > this.productQuantity) {
@@ -165,16 +165,66 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         return order;
     }
-    stopEntryOrder(): Order {
-        throw new Error('Method not implemented.');
+    stopEntryOrder(prize: number, funds: number): Order {
+        if (funds + this.fee > this.account.balance) {
+            throw new Error('There is not enough funds in the account');
+        }
+        const order = {
+            id: this.generateRandomId(),
+            side: Side.BUY,
+            stop: Stop.ENTRY,
+            stop_price: prize,
+            funds,
+            type: OrderType.MARKET,
+            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
+            created_at: null, // is not relevant for the simulator
+            status: OrderStatus.RECEIVED,
+        } as unknown as Order;
+
+        this.orders.push(order);
+        return order;
     }
-    stopLossOrder(): Order {
-        throw new Error('Method not implemented.');
+    stopLossOrder(prize: number, size: number): Order {
+        if (size <= 0) {
+            throw new Error('Size must be a value greater than 0');
+        }
+
+        if (size > this.productQuantity) {
+            throw new Error('There is not enough amount of the current product to sell');
+        }
+
+        if (prize <= 0) {
+            throw new Error('Price must be greater than 0');
+        }
+        const order = {
+            id: this.generateRandomId(),
+            side: Side.BUY,
+            stop: Stop.LOSS,
+            stop_price: prize,
+            size,
+            type: OrderType.MARKET,
+            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
+            created_at: null, // is not relevant for the simulator
+            status: OrderStatus.RECEIVED,
+        } as unknown as Order;
+
+        this.orders.push(order);
+        return order;
     }
     cancelOrder(id: string): boolean {
-        throw new Error('Method not implemented.');
+        const found = this.orders.find((order) => order.id === id);
+        if (found === undefined) {
+            return false;
+        }
+        found.status = OrderStatus.DONE;
+
+        return true;
     }
-    getAllOrders(filter?: OrderStatus[], limit?: number): Order[] {
+
+    getAllOrders(filter?: OrderStatus[]): Order[] {
+        if (filter && filter?.length > 0) {
+            return this.orders.filter((order) => filter?.includes(order.status));
+        }
         return this.orders;
     }
     getAllTrades(): Trade[] {
@@ -183,11 +233,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
     cancelAllOrders() {
         throw new Error('Method not implemented.');
     }
-    getAccount(id: string): Account {
+    getAccount(): Account {
         return this.account;
-    }
-    getAccountHistory(id: string) {
-        throw new Error('Method not implemented.');
     }
     getProductSize(): number {
         return this.productQuantity;

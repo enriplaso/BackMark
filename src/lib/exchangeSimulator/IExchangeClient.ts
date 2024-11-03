@@ -24,13 +24,12 @@ export interface IExchangeClient {
      */
     limitBuyOrder(price: number, funds: number): Order;
     limitSellOrder(price: number, size: number): Order;
-    stopEntryOrder(): Order;
-    stopLossOrder(): Order;
+    stopEntryOrder(prize: number, funds: number): Order;
+    stopLossOrder(prize: number, size: number): Order;
     cancelOrder(id: string): boolean;
-    getAllOrders(filter?: OrderStatus[], limit?: number): Order[];
+    getAllOrders(filter?: OrderStatus[]): Order[];
     getAllTrades(): Trade[];
     cancelAllOrders(): void;
-    getAccount(id: string): Account;
-    getAccountHistory(id: string): void;
+    getAccount(): Account;
     getProductSize(): number;
 }

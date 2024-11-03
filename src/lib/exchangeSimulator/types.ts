@@ -26,7 +26,7 @@ export enum OrderType {
 
 export enum Stop {
     LOSS = 'loss', // Triggers when the last trade price changes to a value at or below the
-    ENRTRY = 'entry', // Triggers when the last trade price changes to a value at or above the
+    ENTRY = 'entry', // Triggers when the last trade price changes to a value at or above the
 }
 
 export enum Side {
@@ -65,7 +65,7 @@ export type Order = {
     settled?: boolean; // true if funds have been exchanged and settled
     stop?: Stop;
     stop_price?: number; // price (in quote currency) at which to execute the order
-    funding_amount?: number; // Amount of margin funding to be rovided for the order
+    funding_amount?: number; // Amount of margin funding to be provided for the order
 };
 
 export type Account = {

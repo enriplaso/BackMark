@@ -52,7 +52,7 @@ export class BackTest implements IBackTest {
         return {
             product: 'BTC',
             ProductSize: this.exchangeSimulator.getProductSize(),
-            funds: this.exchangeSimulator.getAccount('').balance,
+            funds: this.exchangeSimulator.getAccount().balance,
             earnings: 0, // TODO: calculate
             trades: this.exchangeSimulator.getAllTrades(),
         };
