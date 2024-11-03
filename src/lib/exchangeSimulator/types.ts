@@ -44,15 +44,15 @@ export enum EntryType {
 
 export type Order = {
     id: string;
+    status: OrderStatus;
+    time_in_force: TimeInForce;
     price?: number; //price per unit of base currency
     size?: number; // amount of base currency to buy/sell
-    productId: string; // book the order was placed on
     profile_id?: string; // rofile_id that placed the order
     side?: Side; // buy or sell
     funds?: number; //amount of quote currency to spend (for market orders)
     specified_funds?: string; //funds with fees
     type?: OrderType;
-    time_in_force: TimeInForce;
     expire_time?: Date; // timestamp at which order expires
     post_only?: boolean; // if true, forces order to be maker only
     created_at: Date; // time at which order was placed
@@ -62,7 +62,6 @@ export type Order = {
     fill_fees?: number; //fees paid on current filled amount
     filled_size?: number; //amount (in base currency) of the order that has been filled
     executed_value?: number;
-    status: OrderStatus;
     settled?: boolean; // true if funds have been exchanged and settled
     stop?: Stop;
     stop_price?: number; // price (in quote currency) at which to execute the order
@@ -104,4 +103,12 @@ export type Trade = {
     closeTime?: number;
     closePrice?: number;
     netProfit?: number;
+};
+
+export type SimulationOptions = {
+    productName: string; // EG BTC-USD
+    accountBalance: number; // The initial money that you have in your account
+    fee?: number; // Exchange Operation Fee, default 1
+    productQuantity?: number; //E.G Bitcoin quantity , default 0
+    randomizeFactor?: 0 | 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9; // This will randomize how transaction are processed to give more realism
 };

@@ -10,16 +10,15 @@ describe('Exchange Simulator tests', function () {
     const PRODUCT_ID = 'BTC-USD';
 
     before(async () => {
-        exchangeSimulator = new ExchangeSimulator(1000, 1);
+        exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: 1000, fee: 1 });
     });
 
     it('Should create a market buy order', async function () {
         const funds = 500;
 
-        const order = await exchangeSimulator.marketBuyOrder(PRODUCT_ID, funds);
+        const order = await exchangeSimulator.marketBuyOrder(funds);
 
         console.log(order);
-        expect(order.productId).to.equal(PRODUCT_ID);
         expect(order.side).to.equal(Side.BUY);
         expect(order.type).to.equal(OrderType.MARKET);
         expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);
@@ -29,7 +28,7 @@ describe('Exchange Simulator tests', function () {
     it('Should not create an order if there are no funds in the account', async function () {
         const funds = 5000;
         try {
-            await exchangeSimulator.marketBuyOrder(PRODUCT_ID, funds);
+            await exchangeSimulator.marketBuyOrder(funds);
             fail('should fail');
         } catch (error) {
             console.log('XXXX'); // assert is error
@@ -41,9 +40,8 @@ describe('Exchange Simulator tests', function () {
         const size = 0.5;
         exchangeSimulator.setProductSize(3);
 
-        const order = await exchangeSimulator.marketSellOrder(PRODUCT_ID, size);
+        const order = await exchangeSimulator.marketSellOrder(size);
 
-        expect(order.productId).to.equal(PRODUCT_ID);
         expect(order.side).to.equal(Side.SELL);
         expect(order.type).to.equal(OrderType.MARKET);
         expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);

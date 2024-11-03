@@ -3,7 +3,7 @@ import type { IExchangeSimulator } from '../../src/lib/exchangeSimulator/IExchan
 import type { TradingData } from '../../src/lib/exchangeSimulator/types.js';
 import { FasterSMA } from 'trading-signals';
 
-const SMA_DAYS = 2;
+const SMA_DAYS = 10;
 
 export class SmaStrategy implements IStrategy {
     private sma: FasterSMA;
@@ -35,7 +35,7 @@ export class SmaStrategy implements IStrategy {
 
         if (
             this.previusData &&
-            this.isDayChange(tradingData.timestamp, this.previusData.timestamp) &&
+            this.isDayChange(new Date(tradingData.timestamp), new Date(this.previusData.timestamp)) &&
             this.accumulatedDailyPrices.length > 0
         ) {
             const avg = this.accumulatedDailyPrices.reduce((sum, current) => sum + current, 0) / this.accumulatedDailyPrices.length;
@@ -53,13 +53,15 @@ export class SmaStrategy implements IStrategy {
         if (!this.hasTradedToday) {
             if (tradingData.price < this.sma.getResult() - this.sma.getResult() * 0.03) {
                 // at less 20% less
-                this.exchangeClient.marketBuyOrder('BTC', account.balance * 0.5);
+                if (account.balance > 5) {
+                    this.exchangeClient.marketBuyOrder(account.balance * 0.5);
+                }
             }
 
             if (tradingData.price > this.sma.getResult() + this.sma.getResult() * 0.02) {
-                const bitcoin = this.exchangeClient.getProductSize('BTC');
+                const bitcoin = this.exchangeClient.getProductSize();
                 if (bitcoin > 0) {
-                    this.exchangeClient.marketSellOrder('BTC', bitcoin);
+                    this.exchangeClient.marketSellOrder(bitcoin);
                 }
             }
 
@@ -69,6 +71,5 @@ export class SmaStrategy implements IStrategy {
         return;
     }
 
-    private isDayChange = (timestamp: number, prevTimestampt: number): boolean =>
-        new Date(timestamp).getDay() > new Date(prevTimestampt).getDay();
+    private isDayChange = (current: Date, prev: Date): boolean => current.getDay() !== prev.getDay() && current > prev;
 }

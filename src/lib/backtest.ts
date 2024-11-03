@@ -32,7 +32,7 @@ export class BackTest implements IBackTest {
                     //process.stdout.cursorTo(0);
                     //process.stdout.write(`line: ${lines}`);
 
-                    console.log(`line: ${lines}`);
+                    // console.log(`line: ${lines}`);
 
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.strategy.checkPosition(tradingData);
@@ -48,13 +48,19 @@ export class BackTest implements IBackTest {
         }
     }
 
-    getResult(): BackTestResult {
-        throw new Error('Method not implemented.');
+    public getResult(): BackTestResult {
+        return {
+            product: 'BTC',
+            ProductSize: this.exchangeSimulator.getProductSize(),
+            funds: this.exchangeSimulator.getAccount('').balance,
+            earnings: 0, // TODO: calculate
+            trades: this.exchangeSimulator.getAllTrades(),
+        };
     }
 
     private getTradingDataFromLine(lineData: string): TradingData {
-        const columnsArr = lineData.split(',').map((e) => parseFloat(e));
-        const price = (columnsArr[1] + columnsArr[2] + columnsArr[3] + columnsArr[4]) / 4; // open, close , hight, low.
-        return { timestamp: columnsArr[0], price, volume: columnsArr[5] };
+        const [timestamp, open, close, high, low, volume] = lineData.split(',').map((e) => parseFloat(e));
+        const price = (open + close + high + low) / 4;
+        return { timestamp, price, volume };
     }
 }

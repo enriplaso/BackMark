@@ -1,4 +1,4 @@
-import { Account, Order, OrderStatus } from './types.js';
+import { Account, Order, OrderStatus, Trade } from './types.js';
 
 /**
  * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts
@@ -7,31 +7,30 @@ import { Account, Order, OrderStatus } from './types.js';
 export interface IExchangeClient {
     /**
      * Creates a buy order that should be filled at current market price
-     * @param productId must match a valid product eg: BTC-USD
      * @param funds is the ammount of currency you want to buy in USD (eg: 1000)
      */
-    marketBuyOrder(productId: string, funds: number): Order;
+    marketBuyOrder(funds: number): Order;
 
     /**
      * Creates a Sell order that should be filled at current market price
-     * @param productId must match a valid product eg: BTC-USD
      * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
      */
-    marketSellOrder(productId: string, size: number): Order;
+    marketSellOrder(size: number): Order;
     /**
      *
      * @param productId
      * @param price
      * @param funds
      */
-    limitBuyOrder(productId: string, price: number, funds: number): Order;
-    limitSellOrder(productId: string, price: number, size: number): Order;
-    stopEntryOrder(productId: string): Promise<Order>;
-    stopLossOrder(productId: string): Promise<Order>;
-    cancelOrder(id: string): Promise<boolean>;
-    getAllOrders(filter?: Array<OrderStatus>, limit?: number): Promise<Array<Order>>;
+    limitBuyOrder(price: number, funds: number): Order;
+    limitSellOrder(price: number, size: number): Order;
+    stopEntryOrder(): Order;
+    stopLossOrder(): Order;
+    cancelOrder(id: string): boolean;
+    getAllOrders(filter?: OrderStatus[], limit?: number): Order[];
+    getAllTrades(): Trade[];
     cancelAllOrders(): void;
-    getAccount(id: string): Promise<Account>;
+    getAccount(id: string): Account;
     getAccountHistory(id: string): void;
-    getProductSize(productId: string): number;
+    getProductSize(): number;
 }
