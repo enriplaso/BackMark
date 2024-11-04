@@ -10,7 +10,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private account!: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
     private currentTrade: Trade | undefined | null;
-    private fee = 1;
+    private fee = 1; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us
 
     constructor(private options: SimulationOptions) {
         this.init();
@@ -43,6 +43,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
                             this.currentTrade.entryPrice = this.currentTrade.entryPrice + tradingdata.price;
                         } else {
                             this.currentTrade = {
+                                orderId: this.orders[i].id,
                                 entryTime: tradingdata.timestamp,
                                 entryPrice: tradingdata.price,
                             };
@@ -165,7 +166,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         return order;
     }
-    stopEntryOrder(prize: number, funds: number): Order {
+    public stopEntryOrder(prize: number, funds: number): Order {
         if (funds + this.fee > this.account.balance) {
             throw new Error('There is not enough funds in the account');
         }
@@ -184,7 +185,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         this.orders.push(order);
         return order;
     }
-    stopLossOrder(prize: number, size: number): Order {
+    public stopLossOrder(prize: number, size: number): Order {
         if (size <= 0) {
             throw new Error('Size must be a value greater than 0');
         }
@@ -211,7 +212,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         this.orders.push(order);
         return order;
     }
-    cancelOrder(id: string): boolean {
+    public cancelOrder(id: string): boolean {
         const found = this.orders.find((order) => order.id === id);
         if (found === undefined) {
             return false;
@@ -221,25 +222,25 @@ export class ExchangeSimulator implements IExchangeSimulator {
         return true;
     }
 
-    getAllOrders(filter?: OrderStatus[]): Order[] {
+    public getAllOrders(filter?: OrderStatus[]): Order[] {
         if (filter && filter?.length > 0) {
             return this.orders.filter((order) => filter?.includes(order.status));
         }
         return this.orders;
     }
-    getAllTrades(): Trade[] {
+    public getAllTrades(): Trade[] {
         return this.trades;
     }
-    cancelAllOrders() {
+    public cancelAllOrders() {
         throw new Error('Method not implemented.');
     }
-    getAccount(): Account {
+    public getAccount(): Account {
         return this.account;
     }
-    getProductSize(): number {
+    public getProductSize(): number {
         return this.productQuantity;
     }
-    setProductSize(size: number) {
+    public setProductSize(size: number) {
         this.productQuantity = size;
     }
 

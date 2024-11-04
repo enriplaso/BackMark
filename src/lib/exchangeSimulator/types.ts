@@ -94,10 +94,11 @@ export type AccountHistoryDetails = {
 export type TradingData = {
     timestamp: number;
     price: number;
-    volume?: number;
+    volume?: number; // Product quantiy e:g  num BTCs
 };
 
 export type Trade = {
+    orderId: string;
     entryTime: number;
     entryPrice: number;
     closeTime?: number;
