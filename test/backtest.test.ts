@@ -20,6 +20,8 @@ describe('backtest tests', function () {
         const result = backTest.getResult();
         console.info(result);
 
+        console.info(exchangeSimulator.getAllOrders());
+
         expect(true).be.true;
     });
 });

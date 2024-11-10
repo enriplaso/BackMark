@@ -31,50 +31,19 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
 
     public processOrders(tradingdata: TradingData) {
-        if (!this.account) {
-            this.init();
-        }
-        for (let i = this.orders.length - 1; i >= 0; i--) {
-            switch (this.orders[i].type) {
-                case OrderType.MARKET:
-                    if (this.orders[i].side === Side.BUY) {
-                        this.account.balance = this.account.balance - this.orders[i].funds! - this.fee;
-                        this.productQuantity = this.productQuantity + (this.orders[i].funds! - this.fee) / tradingdata.price;
-                        if (this.currentTrade) {
-                            this.currentTrade.entryPrice = this.currentTrade.entryPrice + tradingdata.price;
-                        } else {
-                            this.currentTrade = {
-                                orderId: this.orders[i].id,
-                                entryTime: tradingdata.timestamp,
-                                entryPrice: tradingdata.price,
-                            };
-                        }
-                    }
-                    if (this.orders[i].side === Side.SELL) {
-                        this.account.balance = this.account.balance + this.orders[i].size! * tradingdata.price - this.fee;
-                        this.productQuantity = this.productQuantity - this.orders[i].size!;
-                        // trade
-                        if (this.currentTrade) {
-                            this.currentTrade.closePrice = tradingdata.price;
-                            this.currentTrade.closeTime = tradingdata.timestamp;
-                            this.currentTrade.netProfit = 30;
-                            this.trades.push(this.currentTrade);
-                            this.currentTrade = null;
-                        }
-                    }
-                    this.orders[i].status = OrderStatus.DONE;
-                    this.orders[i].done_at = new Date(tradingdata.timestamp);
+        const uncompleteOrders: Order[] = [];
 
-                    this.closedOrders.push(this.orders[i]);
-
-                    this.orders.splice(i, 1);
-                    break;
-                case OrderType.LIMIT:
-                    break;
-                default:
-                    break;
+        let order = this.orders.shift();
+        while (order !== undefined) {
+            const wasClosed = this.processOrder(order, tradingdata);
+            if (!wasClosed) {
+                uncompleteOrders.push(order);
             }
+
+            order = this.orders.shift();
         }
+
+        // this.orders = uncompleteOrders.concat(this.orders);
     }
 
     public marketBuyOrder(funds: number): Order {
@@ -243,5 +212,37 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
     public setProductSize(size: number) {
         this.productQuantity = size;
+    }
+
+    private processOrder(order: Order, tradingdata: TradingData): boolean {
+        let closed = false;
+        if (order.type === OrderType.MARKET) {
+            if (order.side === Side.BUY) {
+                this.account.balance = this.account.balance - order.funds! - this.fee;
+                this.productQuantity = this.productQuantity + (order.funds! - this.fee) / tradingdata.price;
+            }
+
+            if (order.side === Side.SELL) {
+                this.account.balance = this.account.balance + order.size! * tradingdata.price - this.fee;
+                this.productQuantity = this.productQuantity - order.size!;
+            }
+        }
+
+        if (order.type === OrderType.LIMIT) {
+            if (order.side === Side.BUY) {
+                throw new Error('not implementd');
+            }
+
+            if (order.side === Side.SELL) {
+                throw new Error('not implementd');
+            }
+        }
+
+        order.status = OrderStatus.DONE;
+        order.done_at = new Date(tradingdata.timestamp);
+
+        this.closedOrders.push(order);
+
+        return closed;
     }
 }
