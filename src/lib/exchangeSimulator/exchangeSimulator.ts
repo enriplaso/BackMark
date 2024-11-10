@@ -9,9 +9,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private trades: Trade[] = [];
     private closedOrders: Order[] = [];
     private account!: Account;
+    // TODO: include in the account
     private productQuantity = 0; //E.G Bitcoin quantity
-    private currentTrade: Trade | undefined | null;
-    private fee = 2.5; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us
+    private fee = 1.2; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us 2.5
 
     constructor(private options: SimulationOptions) {
         this.init();
@@ -43,7 +43,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
             order = this.orders.shift();
         }
 
-        // this.orders = uncompleteOrders.concat(this.orders);
+        if (uncompleteOrders.length > 0) {
+            this.orders = uncompleteOrders.concat(this.orders);
+        }
     }
 
     public marketBuyOrder(funds: number): Order {
@@ -214,17 +216,55 @@ export class ExchangeSimulator implements IExchangeSimulator {
         this.productQuantity = size;
     }
 
-    private processOrder(order: Order, tradingdata: TradingData): boolean {
+    private processOrder(order: Order, tradingData: TradingData): boolean {
         let closed = false;
+
         if (order.type === OrderType.MARKET) {
             if (order.side === Side.BUY) {
-                this.account.balance = this.account.balance - order.funds! - this.fee;
-                this.productQuantity = this.productQuantity + (order.funds! - this.fee) / tradingdata.price;
+                const buyOderFee = this.calculateFee(order.funds!, this.fee);
+                const wantedProductQuantity = (order.funds! - buyOderFee) / tradingData.price;
+
+                // Open a trade
+
+                if (tradingData.volume - wantedProductQuantity >= 0) {
+                    this.productQuantity = this.productQuantity + wantedProductQuantity;
+                    this.trades.push({
+                        orderId: order.id,
+                        price: tradingData.price,
+                        size: wantedProductQuantity,
+                        created_at: new Date(tradingData.timestamp),
+                    });
+                    this.account.balance = this.account.balance - order.funds! - buyOderFee;
+
+                    // Close order
+                    order.status = OrderStatus.DONE;
+                    order.done_at = new Date(tradingData.timestamp);
+
+                    this.closeOrder(order, new Date(tradingData.timestamp));
+                    closed = true;
+                } else {
+                    this.trades.push({
+                        orderId: order.id,
+                        price: tradingData.price,
+                        size: tradingData.volume, // cannot buy more than the available volume !!!
+                        created_at: new Date(tradingData.timestamp),
+                    });
+                    this.productQuantity = this.productQuantity + tradingData.volume;
+                    const tradePrice = tradingData.price * tradingData.volume - buyOderFee;
+                    this.account.balance = this.account.balance - tradePrice;
+                    order.funds = order.funds! - tradePrice;
+                }
             }
 
             if (order.side === Side.SELL) {
-                this.account.balance = this.account.balance + order.size! * tradingdata.price - this.fee;
+                const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee);
+                this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
                 this.productQuantity = this.productQuantity - order.size!;
+
+                ///
+
+                this.closeOrder(order, new Date(tradingData.timestamp));
+                closed = true;
             }
         }
 
@@ -238,11 +278,16 @@ export class ExchangeSimulator implements IExchangeSimulator {
             }
         }
 
-        order.status = OrderStatus.DONE;
-        order.done_at = new Date(tradingdata.timestamp);
-
-        this.closedOrders.push(order);
-
         return closed;
+    }
+
+    private calculateFee(funds: number, fee: number): number {
+        return funds / (fee * 100);
+    }
+
+    private closeOrder(order: Order, doneAt: Date): void {
+        order.status = OrderStatus.DONE;
+        order.done_at = doneAt;
+        this.closedOrders.push(order);
     }
 }

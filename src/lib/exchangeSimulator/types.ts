@@ -94,16 +94,14 @@ export type AccountHistoryDetails = {
 export type TradingData = {
     timestamp: number;
     price: number;
-    volume?: number; // Product quantiy e:g  num BTCs
+    volume: number; // Product quantiy e:g  num BTCs
 };
 
 export type Trade = {
     orderId: string;
-    entryTime: number;
-    entryPrice: number;
-    closeTime?: number;
-    closePrice?: number;
-    netProfit?: number;
+    price: number;
+    size: number;
+    created_at: Date; // time at which Trade was placed
 };
 
 export type SimulationOptions = {

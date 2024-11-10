@@ -5,7 +5,7 @@ import { IExchangeSimulator } from '../src/lib/exchangeSimulator/IExchangeSImula
 import { ExchangeSimulator } from '../src/lib/exchangeSimulator/exchangeSimulator.js';
 import { OrderType, Side, TimeInForce, TradingData } from '../src/lib/exchangeSimulator/types.js';
 
-describe.only('Exchange Simulator tests', function () {
+describe('Exchange Simulator tests', function () {
     let exchangeSimulator: IExchangeSimulator;
     const PRODUCT_ID = 'BTC-USD';
 
@@ -76,7 +76,7 @@ describe.only('Exchange Simulator tests', function () {
             expect(accountBalance).to.equal(initialBalance - funds - fee);
         });
 
-        it.only('Should Not process process if there is not enough volume', async function () {
+        it('Should Not process process if there is not enough volume', async function () {
             const initialBalance = 1000000;
             const funds = 500000;
             const fee = 1;
