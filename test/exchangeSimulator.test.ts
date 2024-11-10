@@ -54,7 +54,7 @@ describe('Exchange Simulator tests', function () {
         it('Should process market buy order', async function () {
             const initialBalance = 1000;
             const funds = 500;
-            const fee = 1;
+            const fee = 0;
 
             const exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: initialBalance, fee });
             exchangeSimulator.marketBuyOrder(funds);
@@ -72,11 +72,11 @@ describe('Exchange Simulator tests', function () {
             const accountBalance = exchangeSimulator.getAccount().balance;
 
             expect(orders.length).to.equal(0);
-            expect(productSize).to.equal((funds - fee) / tradingData.price);
+            expect(productSize).to.equal((funds - fee) / tradingData.price); //TODO calculate properly based fee
             expect(accountBalance).to.equal(initialBalance - funds - fee);
         });
 
-        it('Should Not process process if there is not enough volume', async function () {
+        it('Should Not close Market Buy order if there is not enough volume', async function () {
             const initialBalance = 1000000;
             const funds = 500000;
             const fee = 1;
@@ -109,6 +109,79 @@ describe('Exchange Simulator tests', function () {
             expect(trades.length).to.equal(2);
 
             //  expect(productSize).to.equal((funds - fee) / tradingData.price);
+            // expect(accountBalance).to.equal(initialBalance - funds - fee);
+        });
+
+        it('Should process market Sell order', async function () {
+            const initialBalance = 0;
+            const initialProductSize = 2;
+            const orderSize = 1;
+            const fee = 1;
+
+            const exchangeSimulator = new ExchangeSimulator({
+                productName: 'BTC-USD',
+                accountBalance: initialBalance,
+                fee,
+                productQuantity: initialProductSize,
+            });
+            exchangeSimulator.marketSellOrder(1);
+
+            const tradingData: TradingData = {
+                timestamp: 1646403720000,
+                price: 41314.0,
+                volume: 3.85438335,
+            };
+
+            exchangeSimulator.processOrders(tradingData);
+
+            const orders = exchangeSimulator.getAllOrders();
+            const productSize = exchangeSimulator.getProductSize();
+            const accountBalance = exchangeSimulator.getAccount().balance;
+
+            expect(orders.length).to.equal(0);
+            expect(productSize).to.equal(initialProductSize - orderSize);
+            expect(accountBalance).to.equal(tradingData.price * orderSize - fee * ((tradingData.price * orderSize) / 100)); // TODO calculat based on fee
+        });
+
+        it('Should Not close Market Sell order if there is not enough volume', async function () {
+            const initialBalance = 0;
+            const initialProductSize = 50;
+            const orderSize = 15;
+            const fee = 1;
+
+            const exchangeSimulator = new ExchangeSimulator({
+                productName: 'BTC-USD',
+                accountBalance: initialBalance,
+                fee,
+                productQuantity: initialProductSize,
+            });
+            exchangeSimulator.marketSellOrder(orderSize);
+
+            const tradingData: TradingData = {
+                timestamp: 1646403720000,
+                price: 41314.0,
+                volume: 3.85438335,
+            };
+
+            exchangeSimulator.processOrders(tradingData);
+
+            const tradingData2: TradingData = {
+                timestamp: 1646403730000,
+                price: 42314.0,
+                volume: 5.85438335,
+            };
+
+            exchangeSimulator.processOrders(tradingData2);
+
+            const orders = exchangeSimulator.getAllOrders();
+            const productSize = exchangeSimulator.getProductSize();
+            const accountBalance = exchangeSimulator.getAccount().balance;
+            const trades = exchangeSimulator.getAllTrades();
+
+            expect(orders.length).to.equal(1);
+            expect(trades.length).to.equal(2);
+
+            expect(productSize).to.equal(initialProductSize - tradingData.volume - tradingData2.volume);
             // expect(accountBalance).to.equal(initialBalance - funds - fee);
         });
     });

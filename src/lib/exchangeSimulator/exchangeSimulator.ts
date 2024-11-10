@@ -10,13 +10,16 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private closedOrders: Order[] = [];
     private account!: Account;
     // TODO: include in the account
-    private productQuantity = 0; //E.G Bitcoin quantity
+    private productQuantity: number = 0; //E.G Bitcoin quantity
     private fee = 1.2; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us 2.5
 
     constructor(private options: SimulationOptions) {
         this.init();
         if (this.options.fee) {
             this.fee = this.options.fee;
+        }
+        if (options.productQuantity !== undefined) {
+            this.productQuantity = options.productQuantity;
         }
     }
 
@@ -221,7 +224,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         if (order.type === OrderType.MARKET) {
             if (order.side === Side.BUY) {
-                const buyOderFee = this.calculateFee(order.funds!, this.fee);
+                const buyOderFee = this.calculateFee(order.funds!, this.fee); // FIXME: calculate based on trades and not in order
                 const wantedProductQuantity = (order.funds! - buyOderFee) / tradingData.price;
 
                 // Open a trade
@@ -236,10 +239,6 @@ export class ExchangeSimulator implements IExchangeSimulator {
                     });
                     this.account.balance = this.account.balance - order.funds! - buyOderFee;
 
-                    // Close order
-                    order.status = OrderStatus.DONE;
-                    order.done_at = new Date(tradingData.timestamp);
-
                     this.closeOrder(order, new Date(tradingData.timestamp));
                     closed = true;
                 } else {
@@ -249,6 +248,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
                         size: tradingData.volume, // cannot buy more than the available volume !!!
                         created_at: new Date(tradingData.timestamp),
                     });
+
                     this.productQuantity = this.productQuantity + tradingData.volume;
                     const tradePrice = tradingData.price * tradingData.volume - buyOderFee;
                     this.account.balance = this.account.balance - tradePrice;
@@ -257,14 +257,35 @@ export class ExchangeSimulator implements IExchangeSimulator {
             }
 
             if (order.side === Side.SELL) {
-                const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee);
-                this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
-                this.productQuantity = this.productQuantity - order.size!;
+                if (tradingData.volume - order.size! >= 0) {
+                    const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee); // FIXME: calculate based on trades and not in order
+                    this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
+                    this.productQuantity = this.productQuantity - order.size!;
 
-                ///
+                    this.trades.push({
+                        // TODO :adde more info to Trade, if is a seel or buy maz
+                        orderId: order.id,
+                        price: tradingData.price,
+                        size: order.size!,
+                        created_at: new Date(tradingData.timestamp),
+                    });
 
-                this.closeOrder(order, new Date(tradingData.timestamp));
-                closed = true;
+                    this.closeOrder(order, new Date(tradingData.timestamp));
+                    closed = true;
+                } else {
+                    this.trades.push({
+                        orderId: order.id,
+                        price: tradingData.price,
+                        size: tradingData.volume, // cannot sell more than the available volume !!!
+                        created_at: new Date(tradingData.timestamp),
+                    });
+
+                    const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, this.fee);
+                    this.account.balance = this.account.balance + tradingData.volume * tradingData.price - sellOrderFee;
+                    this.productQuantity = this.productQuantity - tradingData.volume;
+
+                    order.size = order.size! - tradingData.volume;
+                }
             }
         }
 
