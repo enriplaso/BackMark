@@ -8,12 +8,15 @@ import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
 
 export class BackTest implements IBackTest {
+    private readonly initialFunds: number;
     constructor(
         private tradingDataPath: string,
         private strategy: IStrategy,
         private readonly exchangeSimulator: IExchangeSimulator,
         // private options?: BackTestOptions,
-    ) {}
+    ) {
+        this.initialFunds = exchangeSimulator.getAccount().balance;
+    }
 
     async run(): Promise<void> {
         console.time('backtest-time:');
@@ -50,10 +53,11 @@ export class BackTest implements IBackTest {
 
     public getResult(): BackTestResult {
         return {
+            initialFunds: this.initialFunds,
             product: 'BTC',
             ProductSize: this.exchangeSimulator.getProductSize(),
             funds: this.exchangeSimulator.getAccount().balance,
-            earnings: 0, // TODO: calculate
+            earnings: this.exchangeSimulator.getAccount().balance - this.initialFunds, // TODO: calculate
             trades: this.exchangeSimulator.getAllTrades(),
         };
     }

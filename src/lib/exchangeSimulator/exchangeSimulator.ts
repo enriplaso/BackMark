@@ -2,6 +2,7 @@ import type { Account, Order, SimulationOptions } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
 import type { Trade, TradingData } from './types.js';
 import { OrderStatus, OrderType, Side, Stop, TimeInForce } from './types.js';
+import { randomUUID } from 'crypto';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private orders: Order[] = [];
@@ -10,7 +11,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private account!: Account;
     private productQuantity = 0; //E.G Bitcoin quantity
     private currentTrade: Trade | undefined | null;
-    private fee = 1; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us
+    private fee = 2.5; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us
 
     constructor(private options: SimulationOptions) {
         this.init();
@@ -21,7 +22,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     public init() {
         this.account = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             balance: this.options.accountBalance,
             holds: 0,
             available: this.options.accountBalance,
@@ -81,7 +82,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error('There is not enough funds in the account');
         }
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.BUY,
             funds,
             type: OrderType.MARKET,
@@ -102,7 +103,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error('There is not enough amount of the current product to sell');
         }
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.SELL,
             size,
             type: OrderType.MARKET,
@@ -124,7 +125,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
 
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.BUY,
             funds,
             type: OrderType.LIMIT,
@@ -152,7 +153,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
 
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.SELL,
             size,
             type: OrderType.LIMIT,
@@ -171,7 +172,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error('There is not enough funds in the account');
         }
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.BUY,
             stop: Stop.ENTRY,
             stop_price: prize,
@@ -198,7 +199,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             throw new Error('Price must be greater than 0');
         }
         const order = {
-            id: this.generateRandomId(),
+            id: randomUUID(),
             side: Side.BUY,
             stop: Stop.LOSS,
             stop_price: prize,
@@ -242,9 +243,5 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
     public setProductSize(size: number) {
         this.productQuantity = size;
-    }
-
-    private generateRandomId(): string {
-        return (Math.floor(Math.random() * 9000000) + 1000000).toString();
     }
 }
