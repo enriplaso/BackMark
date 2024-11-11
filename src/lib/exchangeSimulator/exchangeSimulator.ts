@@ -174,7 +174,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         }
         const order = {
             id: randomUUID(),
-            side: Side.BUY,
+            side: Side.SELL,
             stop: Stop.LOSS,
             stop_price: prize,
             size,
@@ -222,8 +222,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
     private processOrder(order: Order, tradingData: TradingData): boolean {
         let closed = false;
 
-        if (order.type === OrderType.MARKET) {
-            if (order.side === Side.BUY) {
+        if (order.side === Side.BUY) {
+            if (order.type === OrderType.MARKET && order.stop === undefined) {
                 const buyOderFee = this.calculateFee(order.funds!, this.fee); // FIXME: calculate based on trades and not in order
                 const wantedProductQuantity = (order.funds! - buyOderFee) / tradingData.price;
 
@@ -256,46 +256,25 @@ export class ExchangeSimulator implements IExchangeSimulator {
                 }
             }
 
-            if (order.side === Side.SELL) {
-                if (tradingData.volume - order.size! >= 0) {
-                    const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee); // FIXME: calculate based on trades and not in order
-                    this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
-                    this.productQuantity = this.productQuantity - order.size!;
+            if (order.type === OrderType.MARKET && order.stop === Stop.ENTRY) {
+                //TODO:
+            }
 
-                    this.trades.push({
-                        // TODO :adde more info to Trade, if is a seel or buy maz
-                        orderId: order.id,
-                        price: tradingData.price,
-                        size: order.size!,
-                        created_at: new Date(tradingData.timestamp),
-                    });
-
-                    this.closeOrder(order, new Date(tradingData.timestamp));
-                    closed = true;
-                } else {
-                    this.trades.push({
-                        orderId: order.id,
-                        price: tradingData.price,
-                        size: tradingData.volume, // cannot sell more than the available volume !!!
-                        created_at: new Date(tradingData.timestamp),
-                    });
-
-                    const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, this.fee);
-                    this.account.balance = this.account.balance + tradingData.volume * tradingData.price - sellOrderFee;
-                    this.productQuantity = this.productQuantity - tradingData.volume;
-
-                    order.size = order.size! - tradingData.volume;
-                }
+            if (order.type === OrderType.LIMIT) {
+                // TODO:
             }
         }
 
-        if (order.type === OrderType.LIMIT) {
-            if (order.side === Side.BUY) {
-                throw new Error('not implementd');
+        if (order.side === Side.SELL) {
+            if (order.type === OrderType.MARKET && order.stop === undefined) {
+                closed = this.triggerSellOrder(order, tradingData);
+            }
+            if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stop_price!) {
+                closed = this.triggerSellOrder(order, tradingData);
             }
 
-            if (order.side === Side.SELL) {
-                throw new Error('not implementd');
+            if (order.type === OrderType.LIMIT) {
+                // TODO:
             }
         }
 
@@ -310,5 +289,39 @@ export class ExchangeSimulator implements IExchangeSimulator {
         order.status = OrderStatus.DONE;
         order.done_at = doneAt;
         this.closedOrders.push(order);
+    }
+
+    private triggerSellOrder(order: Order, tradingData: TradingData): boolean {
+        let closed = false;
+        if (tradingData.volume - order.size! >= 0) {
+            const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee); // FIXME: calculate based on trades and not in order
+            this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
+            this.productQuantity = this.productQuantity - order.size!;
+
+            this.trades.push({
+                // TODO :adde more info to Trade, if is a seel or buy maz
+                orderId: order.id,
+                price: tradingData.price,
+                size: order.size!,
+                created_at: new Date(tradingData.timestamp),
+            });
+
+            this.closeOrder(order, new Date(tradingData.timestamp));
+            closed = true;
+        } else {
+            this.trades.push({
+                orderId: order.id,
+                price: tradingData.price,
+                size: tradingData.volume, // cannot sell more than the available volume !!!
+                created_at: new Date(tradingData.timestamp),
+            });
+
+            const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, this.fee);
+            this.account.balance = this.account.balance + tradingData.volume * tradingData.price - sellOrderFee;
+            this.productQuantity = this.productQuantity - tradingData.volume;
+
+            order.size = order.size! - tradingData.volume;
+        }
+        return closed;
     }
 }

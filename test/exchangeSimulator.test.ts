@@ -184,6 +184,47 @@ describe('Exchange Simulator tests', function () {
             expect(productSize).to.equal(initialProductSize - tradingData.volume - tradingData2.volume);
             // expect(accountBalance).to.equal(initialBalance - funds - fee);
         });
+
+        it.only('Should trigger a stop loss order when reaching the price or less', async function () {
+            const initialBalance = 0;
+            const initialProductSize = 2;
+            const orderSize = 1;
+            const fee = 1;
+
+            const exchangeSimulator = new ExchangeSimulator({
+                productName: 'BTC-USD',
+                accountBalance: initialBalance,
+                fee,
+                productQuantity: initialProductSize,
+            });
+            exchangeSimulator.stopLossOrder(43000, 1);
+
+            const tradingData1: TradingData = {
+                timestamp: 1646403720000,
+                price: 45314.0,
+                volume: 5.85438335,
+            };
+
+            exchangeSimulator.processOrders(tradingData1);
+
+            expect(exchangeSimulator.getAllOrders().length).to.equal(1); // no order processed yet
+
+            const tradingData2: TradingData = {
+                timestamp: 1646403720000,
+                price: 40314.0,
+                volume: 3.85438335,
+            };
+
+            exchangeSimulator.processOrders(tradingData2);
+
+            const orders = exchangeSimulator.getAllOrders();
+            const productSize = exchangeSimulator.getProductSize();
+            const accountBalance = exchangeSimulator.getAccount().balance;
+
+            expect(orders.length).to.equal(0);
+            expect(productSize).to.equal(initialProductSize - orderSize);
+            expect(accountBalance).to.equal(tradingData2.price * orderSize - fee * ((tradingData2.price * orderSize) / 100)); // TODO calculat based on fee
+        });
     });
 });
 
