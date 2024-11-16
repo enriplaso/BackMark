@@ -22,7 +22,7 @@ describe('Exchange Simulator tests', function () {
             console.log(order);
             expect(order.side).to.equal(Side.BUY);
             expect(order.type).to.equal(OrderType.MARKET);
-            expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);
+            expect(order.timeInForce).to.equal(TimeInForce.GOOD_TILL_CANCEL);
             expect(order.funds).to.equal(funds);
         });
 
@@ -38,15 +38,15 @@ describe('Exchange Simulator tests', function () {
         });
 
         it('Should create a market sell order', async function () {
-            const size = 0.5;
+            const quantity = 0.5;
             exchangeSimulator.setProductSize(3);
 
-            const order = await exchangeSimulator.marketSellOrder(size);
+            const order = await exchangeSimulator.marketSellOrder(quantity);
 
             expect(order.side).to.equal(Side.SELL);
             expect(order.type).to.equal(OrderType.MARKET);
-            expect(order.time_in_force).to.equal(TimeInForce.GOOD_TILL_CANCEL);
-            expect(order.size).to.equal(size);
+            expect(order.timeInForce).to.equal(TimeInForce.GOOD_TILL_CANCEL);
+            expect(order.quantity).to.equal(quantity);
         });
     });
 
@@ -185,7 +185,7 @@ describe('Exchange Simulator tests', function () {
             // expect(accountBalance).to.equal(initialBalance - funds - fee);
         });
 
-        it.only('Should trigger a stop loss order when reaching the price or less', async function () {
+        it('Should trigger a stop loss order when reaching the price or less', async function () {
             const initialBalance = 0;
             const initialProductSize = 2;
             const orderSize = 1;

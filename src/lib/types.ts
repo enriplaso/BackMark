@@ -2,11 +2,12 @@ import { Trade } from './exchangeSimulator/types';
 
 export type BackTestResult = {
     product: string;
-    ProductSize: number;
-    initialFunds: number;
-    funds: number;
-    earnings: number;
-    trades: Trade[];
+    finalHoldings: number;
+    initialBalance: number;
+    finalBalance: number;
+    totalProfit: number;
+    profitPercentage: number;
+    tradeHistory: Trade[];
 };
 
 export type BackTestOptions = {

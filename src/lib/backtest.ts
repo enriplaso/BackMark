@@ -53,12 +53,13 @@ export class BackTest implements IBackTest {
 
     public getResult(): BackTestResult {
         return {
-            initialFunds: this.initialFunds,
+            initialBalance: this.initialFunds,
             product: 'BTC',
-            ProductSize: this.exchangeSimulator.getProductSize(),
-            funds: this.exchangeSimulator.getAccount().balance,
-            earnings: this.exchangeSimulator.getAccount().balance - this.initialFunds, // TODO: calculate
-            trades: this.exchangeSimulator.getAllTrades(),
+            finalHoldings: this.exchangeSimulator.getProductSize(),
+            finalBalance: this.exchangeSimulator.getAccount().balance,
+            totalProfit: this.exchangeSimulator.getAccount().balance - this.initialFunds, // TODO: calculate
+            tradeHistory: this.exchangeSimulator.getAllTrades(),
+            profitPercentage: 0, // TODO: add
         };
     }
 

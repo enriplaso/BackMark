@@ -13,6 +13,10 @@
     },
     "cSpell.words": [
         "previus"
-    ]
+    ],
+    "chatgpt.promptPrefix.customPrompt1-enabled": true,
+    "chatgpt.promptPrefix.customPrompt2-enabled": true
 
 }
+
+//

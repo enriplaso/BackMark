@@ -32,7 +32,6 @@ export class ExchangeSimulator implements IExchangeSimulator {
             currency: 'usd',
         };
     }
-
     public processOrders(tradingdata: TradingData) {
         const uncompleteOrders: Order[] = [];
 
@@ -79,10 +78,10 @@ export class ExchangeSimulator implements IExchangeSimulator {
         const order = {
             id: randomUUID(),
             side: Side.SELL,
-            size,
+            quantity: size,
             type: OrderType.MARKET,
-            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
-            created_at: new Date(),
+            timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+            createdAt: new Date(),
             status: OrderStatus.RECEIVED,
         } as Order;
 
@@ -129,10 +128,10 @@ export class ExchangeSimulator implements IExchangeSimulator {
         const order = {
             id: randomUUID(),
             side: Side.SELL,
-            size,
+            quantity: size,
             type: OrderType.LIMIT,
-            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
-            created_at: new Date(),
+            timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+            createdAt: new Date(),
             status: OrderStatus.RECEIVED,
             price,
         } as Order;
@@ -234,8 +233,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
                     this.trades.push({
                         orderId: order.id,
                         price: tradingData.price,
-                        size: wantedProductQuantity,
-                        created_at: new Date(tradingData.timestamp),
+                        quantity: wantedProductQuantity,
+                        createdAt: new Date(tradingData.timestamp),
+                        side: order.side,
                     });
                     this.account.balance = this.account.balance - order.funds! - buyOderFee;
 
@@ -245,8 +245,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
                     this.trades.push({
                         orderId: order.id,
                         price: tradingData.price,
-                        size: tradingData.volume, // cannot buy more than the available volume !!!
-                        created_at: new Date(tradingData.timestamp),
+                        quantity: tradingData.volume, // cannot buy more than the available volume !!!
+                        createdAt: new Date(tradingData.timestamp),
+                        side: order.side,
                     });
 
                     this.productQuantity = this.productQuantity + tradingData.volume;
@@ -269,7 +270,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             if (order.type === OrderType.MARKET && order.stop === undefined) {
                 closed = this.triggerSellOrder(order, tradingData);
             }
-            if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stop_price!) {
+            if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) {
                 closed = this.triggerSellOrder(order, tradingData);
             }
 
@@ -287,23 +288,24 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     private closeOrder(order: Order, doneAt: Date): void {
         order.status = OrderStatus.DONE;
-        order.done_at = doneAt;
+        order.doneAt = doneAt;
         this.closedOrders.push(order);
     }
 
     private triggerSellOrder(order: Order, tradingData: TradingData): boolean {
         let closed = false;
-        if (tradingData.volume - order.size! >= 0) {
-            const sellOrderFee = this.calculateFee(order.size! * tradingData.price, this.fee); // FIXME: calculate based on trades and not in order
-            this.account.balance = this.account.balance + order.size! * tradingData.price - sellOrderFee;
-            this.productQuantity = this.productQuantity - order.size!;
+        if (tradingData.volume - order.quantity >= 0) {
+            const sellOrderFee = this.calculateFee(order.quantity * tradingData.price, this.fee); // FIXME: calculate based on trades and not in order
+            this.account.balance = this.account.balance + order.quantity * tradingData.price - sellOrderFee;
+            this.productQuantity = this.productQuantity - order.quantity;
 
             this.trades.push({
                 // TODO :adde more info to Trade, if is a seel or buy maz
                 orderId: order.id,
                 price: tradingData.price,
-                size: order.size!,
-                created_at: new Date(tradingData.timestamp),
+                quantity: order.quantity,
+                createdAt: new Date(tradingData.timestamp),
+                side: order.side,
             });
 
             this.closeOrder(order, new Date(tradingData.timestamp));
@@ -312,15 +314,16 @@ export class ExchangeSimulator implements IExchangeSimulator {
             this.trades.push({
                 orderId: order.id,
                 price: tradingData.price,
-                size: tradingData.volume, // cannot sell more than the available volume !!!
-                created_at: new Date(tradingData.timestamp),
+                quantity: tradingData.volume, // cannot sell more than the available volume !!!
+                createdAt: new Date(tradingData.timestamp),
+                side: order.side,
             });
 
             const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, this.fee);
             this.account.balance = this.account.balance + tradingData.volume * tradingData.price - sellOrderFee;
             this.productQuantity = this.productQuantity - tradingData.volume;
 
-            order.size = order.size! - tradingData.volume;
+            order.quantity = order.quantity - tradingData.volume;
         }
         return closed;
     }

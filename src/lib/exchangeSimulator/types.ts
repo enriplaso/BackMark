@@ -31,66 +31,30 @@ export enum Stop {
 
 export enum Side {
     BUY = 'buy',
-    SELL = 'Sell',
-}
-
-// Entry type indicates the reason for the account change.
-export enum EntryType {
-    TRANSFER = 'transfer', // Funds moved to/from Coinbase to cbpro
-    MATCH = 'match', // Funds moved as a result of a trade
-    FEE = 'fee', //Fee as a result of a trade
-    REBATE = 'rebate', //Fee rebate as per our fee schedule
+    SELL = 'sell',
 }
 
 export type Order = {
     id: string;
+    type: OrderType;
+    side: Side; // buy or sell
+    quantity: number; // amount of base currency to buy/sell
     status: OrderStatus;
-    time_in_force: TimeInForce;
-    price?: number; //price per unit of base currency
-    size?: number; // amount of base currency to buy/sell
-    profile_id?: string; // rofile_id that placed the order
-    side?: Side; // buy or sell
+    timeInForce: TimeInForce;
+    filledQuantity: number; // Track how much of the order has been filled (in base currency)
+    createdAt: Date; // time at which order was placed
+    price?: number; //price per unit of base currency (for LIMIT orders )
     funds?: number; //amount of quote currency to spend (for market orders)
-    specified_funds?: string; //funds with fees
-    type?: OrderType;
-    expire_time?: Date; // timestamp at which order expires
-    post_only?: boolean; // if true, forces order to be maker only
-    created_at: Date; // time at which order was placed
-    done_at?: Date; // time at which order was done
-    done_reason?: string; // reason order was done (filled, rejected, or otherwise)
-    reject_reason?: string;
-    fill_fees?: number; //fees paid on current filled amount
-    filled_size?: number; //amount (in base currency) of the order that has been filled
-    executed_value?: number;
-    settled?: boolean; // true if funds have been exchanged and settled
+    expireTime?: Date; // timestamp at which order expires
+    doneAt?: Date; // time at which order was done
+    doneReason?: string; // reason order was done (filled, rejected, or otherwise)
+    rejectReason?: string; //TODO : check if is used
+    fillFees?: number; //fees paid on current filled amount
     stop?: Stop;
-    stop_price?: number; // price (in quote currency) at which to execute the order
-    funding_amount?: number; // Amount of margin funding to be provided for the order
+    stopPrice?: number; // price (in quote currency) at which to execute the order
 };
 
-export type Account = {
-    id: string;
-    balance: number;
-    holds: number; // Amount of cash hold in pending order
-    available: number; // how much you can cash out
-    currency: string;
-};
-
-export type AccountHistory = {
-    id: string;
-    ccreated_at: Date;
-    amount: number;
-    balance: number;
-    type: EntryType;
-    details: AccountHistoryDetails;
-};
-
-export type AccountHistoryDetails = {
-    order_id: string;
-    product_id: string;
-    trade_id: string;
-};
-
+// Represent the price /volume of an assent in a concreate time
 export type TradingData = {
     timestamp: number;
     price: number;
@@ -99,9 +63,12 @@ export type TradingData = {
 
 export type Trade = {
     orderId: string;
-    price: number;
-    size: number;
-    created_at: Date; // time at which Trade was placed
+    price: number; // Execution price
+    side: Side; // buy or sell
+    quantity: number; // Quantity traded
+    createdAt: Date; // time at which Trade was placed
+    balanceAfterTrade?: number;
+    holdingsAfterTrade?: number;
 };
 
 export type SimulationOptions = {
@@ -110,4 +77,12 @@ export type SimulationOptions = {
     fee?: number; // Exchange Operation Fee, default 1
     productQuantity?: number; //E.G Bitcoin quantity , default 0
     randomizeFactor?: 0 | 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9; // This will randomize how transaction are processed to give more realism
+};
+
+export type Account = {
+    id: string;
+    balance: number;
+    holds: number; // Amount of cash hold in pending order
+    available: number; // how much you can cash out
+    currency: string;
 };
