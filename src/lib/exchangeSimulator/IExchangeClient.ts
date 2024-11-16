@@ -1,4 +1,5 @@
-import { Account, Order, OrderStatus, Trade } from './types.js';
+import { type Order, type Trade, OrderStatus } from '../orders//types.js';
+import { Account } from './types.js';
 
 /**
  * More info in https://docs.cloud.coinbase.com/exchange/reference/exchangerestapi_getaccounts

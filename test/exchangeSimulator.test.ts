@@ -3,7 +3,8 @@ import { expect } from 'chai';
 import 'mocha';
 import { IExchangeSimulator } from '../src/lib/exchangeSimulator/IExchangeSImulator.js';
 import { ExchangeSimulator } from '../src/lib/exchangeSimulator/exchangeSimulator.js';
-import { OrderType, Side, TimeInForce, TradingData } from '../src/lib/exchangeSimulator/types.js';
+import { TradingData } from '../src/lib/exchangeSimulator/types.js';
+import { OrderType, Side, TimeInForce } from '../src/lib/orders/types.js';
 
 describe('Exchange Simulator tests', function () {
     let exchangeSimulator: IExchangeSimulator;

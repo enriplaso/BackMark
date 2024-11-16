@@ -1,7 +1,8 @@
-import type { Account, Order, SimulationOptions } from './types.js';
+import type { Account, SimulationOptions, TradingData } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
-import type { Trade, TradingData } from './types.js';
-import { OrderStatus, OrderType, Side, Stop, TimeInForce } from './types.js';
+import type { Order, Trade } from '../orders/types.js';
+
+import { OrderStatus, OrderType, Side, Stop, TimeInForce } from '../orders/types.js';
 import { randomUUID } from 'crypto';
 
 export class ExchangeSimulator implements IExchangeSimulator {
