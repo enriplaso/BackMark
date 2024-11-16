@@ -9,13 +9,13 @@ export class OrderManager implements IOrderManager {
 
     constructor() {}
 
-    addOrder(order: Order): void {
+    pushOrder(order: Order): void {
         this.orders.push(order);
     }
-    getOrders(): Order[] {
+    getActiveOrders(): Order[] {
         return this.orders;
     }
-    dequeue(): Order | undefined {
+    dequeueOrder(): Order | undefined {
         return this.orders.shift();
     }
     getClosedOrders(): Order[] {
@@ -35,7 +35,7 @@ export class OrderManager implements IOrderManager {
         this.orders.splice(index, 1); // Remove order form  active orders
         return true;
     }
-    getTrades(): Trade[] {
+    getAllTrades(): Trade[] {
         return this.trades;
     }
     processOrder(order: Order, account: Account, tradingData: TradingData): boolean {

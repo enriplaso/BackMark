@@ -36,18 +36,18 @@ export class ExchangeSimulator implements IExchangeSimulator {
     public processOrders(tradingdata: TradingData) {
         const uncompletedOrders: Order[] = [];
 
-        let order = this.orderManager.dequeue();
+        let order = this.orderManager.dequeueOrder();
         while (order !== undefined) {
             const wasClosed = this.orderManager.processOrder(order, this.account, tradingdata);
             if (!wasClosed) {
                 uncompletedOrders.push(order);
             }
-            order = this.orderManager.dequeue();
+            order = this.orderManager.dequeueOrder();
         }
 
         if (uncompletedOrders.length > 0) {
             for (const order of uncompletedOrders) {
-                this.orderManager.addOrder(order);
+                this.orderManager.pushOrder(order);
             }
         }
     }
@@ -66,7 +66,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
         return order;
     }
 
@@ -87,7 +87,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
 
         return order;
     }
@@ -110,7 +110,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
 
         return order;
     }
@@ -138,7 +138,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             price,
         } as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
 
         return order;
     }
@@ -158,7 +158,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
         return order;
     }
     public stopLossOrder(prize: number, size: number): Order {
@@ -185,7 +185,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.addOrder(order);
+        this.orderManager.pushOrder(order);
         return order;
     }
     public cancelOrder(id: string): boolean {
@@ -193,14 +193,14 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
 
     public getAllOrders(filter?: OrderStatus[]): Order[] {
-        const orders = this.orderManager.getOrders();
+        const orders = this.orderManager.getActiveOrders();
         if (filter && filter?.length > 0) {
             return orders.filter((order) => filter?.includes(order.status));
         }
         return orders;
     }
     public getAllTrades(): Trade[] {
-        return this.orderManager.getTrades();
+        return this.orderManager.getAllTrades();
     }
     public cancelAllOrders() {
         throw new Error('Method not implemented.');
