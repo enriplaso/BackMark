@@ -6,21 +6,21 @@ import type { BackTestResult } from './types.js';
 
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
+import { showLoading, stopLoading } from './util/loadingSpinner.js';
 
 export class BackTest implements IBackTest {
     private readonly initialFunds: number;
     constructor(
-        private tradingDataPath: string,
-        private strategy: IStrategy,
+        private readonly tradingDataPath: string,
+        private readonly strategy: IStrategy,
         private readonly exchangeSimulator: IExchangeSimulator,
-        // private options?: BackTestOptions,
     ) {
         this.initialFunds = exchangeSimulator.getAccount().balance;
     }
 
     async run(): Promise<void> {
-        console.time('backtest-time:');
-        console.log('Reading file line by line with readline.');
+        console.time('BackTest-time');
+        showLoading('Reading market data history file line by line');
 
         try {
             const readInterface = createInterface({
@@ -31,35 +31,30 @@ export class BackTest implements IBackTest {
             for await (const line of readInterface) {
                 lines++;
                 if (lines > 1) {
-                    //process.stdout.clearLine(0);
-                    //process.stdout.cursorTo(0);
-                    //process.stdout.write(`line: ${lines}`);
-
-                    // console.log(`line: ${lines}`);
-
                     const tradingData = this.getTradingDataFromLine(line);
                     await this.strategy.checkPosition(tradingData);
                     this.exchangeSimulator.processOrders(tradingData);
                 }
             }
 
-            //process.stdout.write(`\n`);
-            console.log('Reading file line by line with readline done with');
-            console.timeEnd('backtest-time:');
+            stopLoading(`Reading file line by line done with a total of ${lines} lines`);
+            console.timeEnd('BackTest-time');
         } catch (error) {
             console.error(error);
         }
     }
 
     public getResult(): BackTestResult {
+        const account = this.exchangeSimulator.getAccount();
+        const totalProfit = account.balance - this.initialFunds;
         return {
             initialBalance: this.initialFunds,
             product: 'BTC',
-            finalHoldings: this.exchangeSimulator.getProductSize(),
-            finalBalance: this.exchangeSimulator.getAccount().balance,
-            totalProfit: this.exchangeSimulator.getAccount().balance - this.initialFunds, // TODO: calculate
+            finalHoldings: account.productQuantity,
+            finalBalance: account.balance,
+            totalProfit,
             tradeHistory: this.exchangeSimulator.getAllTrades(),
-            profitPercentage: 0, // TODO: add
+            profitPercentage: 100 * (totalProfit / this.initialFunds),
         };
     }
 

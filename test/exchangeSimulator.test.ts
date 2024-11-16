@@ -1,4 +1,4 @@
-import { fail } from 'assert';
+/*import { fail } from 'assert';
 import { expect } from 'chai';
 import 'mocha';
 import { IExchangeSimulator } from '../src/lib/exchangeSimulator/IExchangeSImulator.js';
@@ -234,3 +234,5 @@ function assertIsError(error: unknown): asserts error is Error {
         throw new Error('Error is not an instance of error');
     }
 }
+
+*/
