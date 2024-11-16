@@ -12,6 +12,8 @@ export type Account = {
     holds: number; // Amount of cash hold in pending order
     available: number; // how much you can cash out
     currency: string;
+    productQuantity: number;
+    fee: number;
 };
 // Represent the price /volume of an assent in a concreate time
 export type TradingData = {

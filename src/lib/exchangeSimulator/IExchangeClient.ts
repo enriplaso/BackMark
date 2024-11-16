@@ -1,4 +1,4 @@
-import { type Order, type Trade, OrderStatus } from '../orders//types.js';
+import { type Order, type Trade, OrderStatus } from '../orders/types.js';
 import { Account } from './types.js';
 
 /**

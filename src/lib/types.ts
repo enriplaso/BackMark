@@ -1,4 +1,4 @@
-import { Trade } from './exchangeSimulator/types';
+import { Trade } from './orders/types.js';
 
 export type BackTestResult = {
     product: string;
