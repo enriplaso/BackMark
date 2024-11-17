@@ -11,7 +11,7 @@ describe('backTest tests', function () {
         const exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: 1000, fee: 1 });
 
         const strategy = new SmaStrategy(exchangeSimulator);
-        const backTest = new BackTest('./test/data/btcusd.csv', strategy, exchangeSimulator);
+        const backTest = new BackTest('./test/data/btcusd_short.csv', strategy, exchangeSimulator);
 
         await backTest.run();
 

@@ -1,6 +1,6 @@
 import type { Account, TradingData } from '../exchangeSimulator/types.js';
 import type { IOrderManager } from './IOrderManager.js';
-import { type Order, OrderStatus, OrderType, Side, Stop, Trade } from './types.js';
+import { type Order, OrderStatus, OrderType, Side, Stop, TimeInForce, Trade } from './types.js';
 
 export class OrderManager implements IOrderManager {
     private orders: Order[] = [];
@@ -39,40 +39,38 @@ export class OrderManager implements IOrderManager {
         return this.trades;
     }
     processOrder(order: Order, account: Account, tradingData: TradingData): boolean {
-        let closed = false;
-
         if (order.side === Side.BUY) {
             if (order.type === OrderType.MARKET && order.stop === undefined) {
-                closed = this.triggerBuyOrder(order, account, tradingData);
+                return this.triggerBuyOrder(order, account, tradingData);
             }
 
             if (order.type === OrderType.MARKET && order.stop === Stop.ENTRY && tradingData.price <= order.stopPrice!) {
                 // Once triggered stop order is converted in a Market order
                 order.stop = undefined;
-                closed = this.triggerBuyOrder(order, account, tradingData);
+                return this.triggerBuyOrder(order, account, tradingData);
             }
 
             if (order.type === OrderType.LIMIT && tradingData.price <= order.price!) {
-                closed = this.triggerBuyOrder(order, account, tradingData);
+                return this.triggerBuyOrder(order, account, tradingData);
             }
         }
 
         if (order.side === Side.SELL) {
             if (order.type === OrderType.MARKET && order.stop === undefined) {
-                closed = this.triggerSellOrder(order, account, tradingData);
+                return this.triggerSellOrder(order, account, tradingData);
             }
             if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) {
                 // Convert STOP to simple MARKET
                 order.stop = undefined;
-                closed = this.triggerSellOrder(order, account, tradingData);
+                return this.triggerSellOrder(order, account, tradingData);
             }
 
             if (order.type === OrderType.LIMIT && tradingData.price >= order.price!) {
-                closed = this.triggerSellOrder(order, account, tradingData);
+                return this.triggerSellOrder(order, account, tradingData);
             }
         }
 
-        return closed;
+        return false;
     }
 
     private calculateFee(funds: number, fee: number): number {
@@ -89,8 +87,6 @@ export class OrderManager implements IOrderManager {
     }
 
     private triggerBuyOrder(order: Order, account: Account, tradingData: TradingData): boolean {
-        let closed = false;
-
         const buyOrderFee = this.calculateFee(order.funds!, account.fee);
         const maxQuantity = (order.funds! - buyOrderFee) / tradingData.price;
 
@@ -106,22 +102,33 @@ export class OrderManager implements IOrderManager {
             });
 
             this.closeOrder(order, new Date(tradingData.timestamp));
-            closed = true;
-        } else {
-            const spentFunds = tradingData.volume * tradingData.price + buyOrderFee;
-            account.productQuantity += tradingData.volume;
-            account.balance -= spentFunds;
-
-            this.trades.push({
-                orderId: order.id,
-                price: tradingData.price,
-                quantity: tradingData.volume,
-                createdAt: new Date(tradingData.timestamp),
-                side: order.side,
-            });
+            return true;
         }
 
-        return closed;
+        const shouldContinue = this.checkTimeInForce(order, tradingData);
+
+        if (!shouldContinue) {
+            return true;
+        }
+
+        const spentFunds = tradingData.volume * tradingData.price + buyOrderFee;
+        account.productQuantity += tradingData.volume;
+        account.balance -= spentFunds;
+
+        this.trades.push({
+            orderId: order.id,
+            price: tradingData.price,
+            quantity: tradingData.volume,
+            createdAt: new Date(tradingData.timestamp),
+            side: order.side,
+        });
+
+        if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
+            this.closeOrder(order, new Date(tradingData.timestamp));
+            return true;
+        }
+
+        return false;
     }
 
     private triggerSellOrder(order: Order, account: Account, tradingData: TradingData): boolean {
@@ -132,7 +139,6 @@ export class OrderManager implements IOrderManager {
             account.productQuantity = account.productQuantity - order.quantity;
 
             this.trades.push({
-                // TODO :adde more info to Trade, if is a seel or buy maz
                 orderId: order.id,
                 price: tradingData.price,
                 quantity: order.quantity,
@@ -142,21 +148,57 @@ export class OrderManager implements IOrderManager {
 
             this.closeOrder(order, new Date(tradingData.timestamp));
             closed = true;
-        } else {
-            this.trades.push({
-                orderId: order.id,
-                price: tradingData.price,
-                quantity: tradingData.volume, // cannot sell more than the available volume !!!
-                createdAt: new Date(tradingData.timestamp),
-                side: order.side,
-            });
-
-            const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, account.fee);
-            account.balance = account.balance + tradingData.volume * tradingData.price - sellOrderFee;
-            account.productQuantity = account.productQuantity - tradingData.volume;
-
-            order.quantity = order.quantity - tradingData.volume;
+            return closed;
         }
+
+        const shouldContinue = this.checkTimeInForce(order, tradingData);
+
+        if (!shouldContinue) {
+            closed = true;
+            return closed;
+        }
+
+        this.trades.push({
+            orderId: order.id,
+            price: tradingData.price,
+            quantity: tradingData.volume, // cannot sell more than the available volume !!!
+            createdAt: new Date(tradingData.timestamp),
+            side: order.side,
+        });
+
+        const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, account.fee);
+        account.balance = account.balance + tradingData.volume * tradingData.price - sellOrderFee;
+        account.productQuantity = account.productQuantity - tradingData.volume;
+
+        order.quantity = order.quantity - tradingData.volume;
+
+        if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
+            this.closeOrder(order, new Date(tradingData.timestamp));
+            closed = true;
+        }
+
         return closed;
+    }
+
+    private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
+        let shouldContinue = true;
+        switch (order.timeInForce) {
+            case TimeInForce.GOOD_TILL_CANCEL: // default
+                break; // continue
+            case TimeInForce.FILL_OR_KILL:
+                this.closeOrder(order, new Date(tradingData.timestamp));
+                shouldContinue = false;
+                break;
+            case TimeInForce.INMEDIATE_OR_CANCELL:
+                break;
+            case TimeInForce.GOOD_TILL_TIME:
+                if (order.expireTime && order?.expireTime?.getTime() >= tradingData.timestamp) {
+                    this.closeOrder(order, new Date(tradingData.timestamp));
+                    shouldContinue = false;
+                }
+                break;
+        }
+
+        return shouldContinue;
     }
 }

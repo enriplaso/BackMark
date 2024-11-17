@@ -36,7 +36,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
     public processOrders(tradingdata: TradingData) {
         const uncompletedOrders: Order[] = [];
 
-        let order = this.orderManager.dequeueOrder();
+        let order = this.orderManager.dequeueOrder(); //TODO: dequeue is not needed
+        //TODO: cancel /close order should remove the order from the array
         while (order !== undefined) {
             const wasClosed = this.orderManager.processOrder(order, this.account, tradingdata);
             if (!wasClosed) {
