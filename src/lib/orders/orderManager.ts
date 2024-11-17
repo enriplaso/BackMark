@@ -38,39 +38,37 @@ export class OrderManager implements IOrderManager {
     getAllTrades(): Trade[] {
         return this.trades;
     }
-    processOrder(order: Order, account: Account, tradingData: TradingData): boolean {
-        if (order.side === Side.BUY) {
-            if (order.type === OrderType.MARKET && order.stop === undefined) {
-                return this.triggerBuyOrder(order, account, tradingData);
+    processOrder(order: Order, account: Account, tradingData: TradingData): void {
+        if (order.side === Side.BUY && this.shouldExecuteBuyOrder(order, tradingData)) {
+            if (order.stop) {
+                order.stop = undefined; // Becomes a Market order
             }
-
-            if (order.type === OrderType.MARKET && order.stop === Stop.ENTRY && tradingData.price <= order.stopPrice!) {
-                // Once triggered stop order is converted in a Market order
-                order.stop = undefined;
-                return this.triggerBuyOrder(order, account, tradingData);
-            }
-
-            if (order.type === OrderType.LIMIT && tradingData.price <= order.price!) {
-                return this.triggerBuyOrder(order, account, tradingData);
-            }
+            return this.executeBuyOrder(order, account, tradingData);
         }
 
-        if (order.side === Side.SELL) {
-            if (order.type === OrderType.MARKET && order.stop === undefined) {
-                return this.triggerSellOrder(order, account, tradingData);
+        if (order.side === Side.SELL && this.shouldExecuteSellOrder(order, tradingData)) {
+            if (order.stop) {
+                order.stop = undefined; // Becomes a Market order
             }
-            if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) {
-                // Convert STOP to simple MARKET
-                order.stop = undefined;
-                return this.triggerSellOrder(order, account, tradingData);
-            }
-
-            if (order.type === OrderType.LIMIT && tradingData.price >= order.price!) {
-                return this.triggerSellOrder(order, account, tradingData);
-            }
+            return this.executeSellOrder(order, account, tradingData);
         }
+    }
 
-        return false;
+    //TODO: both should execute can be merged in one
+    private shouldExecuteBuyOrder(order: Order, tradingData: TradingData): boolean {
+        return (
+            (order.type === OrderType.MARKET && order.stop === undefined) ||
+            (order.type === OrderType.MARKET && order.stop === Stop.ENTRY && tradingData.price <= order.stopPrice!) ||
+            (order.type === OrderType.LIMIT && tradingData.price <= order.price!)
+        );
+    }
+
+    private shouldExecuteSellOrder(order: Order, tradingData: TradingData): boolean {
+        return (
+            (order.type === OrderType.MARKET && order.stop === undefined) ||
+            (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) ||
+            (order.type === OrderType.LIMIT && tradingData.price >= order.price!)
+        );
     }
 
     private calculateFee(funds: number, fee: number): number {
@@ -86,7 +84,7 @@ export class OrderManager implements IOrderManager {
         this.orders.splice(index, 1);
     }
 
-    private triggerBuyOrder(order: Order, account: Account, tradingData: TradingData): boolean {
+    private executeBuyOrder(order: Order, account: Account, tradingData: TradingData): void {
         const buyOrderFee = this.calculateFee(order.funds!, account.fee);
         const maxQuantity = (order.funds! - buyOrderFee) / tradingData.price;
 
@@ -102,13 +100,13 @@ export class OrderManager implements IOrderManager {
             });
 
             this.closeOrder(order, new Date(tradingData.timestamp));
-            return true;
+            return;
         }
 
         const shouldContinue = this.checkTimeInForce(order, tradingData);
 
         if (!shouldContinue) {
-            return true;
+            return;
         }
 
         const spentFunds = tradingData.volume * tradingData.price + buyOrderFee;
@@ -125,14 +123,11 @@ export class OrderManager implements IOrderManager {
 
         if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
             this.closeOrder(order, new Date(tradingData.timestamp));
-            return true;
+            return;
         }
-
-        return false;
     }
 
-    private triggerSellOrder(order: Order, account: Account, tradingData: TradingData): boolean {
-        let closed = false;
+    private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
         if (tradingData.volume - order.quantity >= 0) {
             const sellOrderFee = this.calculateFee(order.quantity * tradingData.price, account.fee); // FIXME: calculate based on trades and not in order
             account.balance = account.balance + order.quantity * tradingData.price - sellOrderFee;
@@ -147,15 +142,13 @@ export class OrderManager implements IOrderManager {
             });
 
             this.closeOrder(order, new Date(tradingData.timestamp));
-            closed = true;
-            return closed;
+            return;
         }
 
         const shouldContinue = this.checkTimeInForce(order, tradingData);
 
         if (!shouldContinue) {
-            closed = true;
-            return closed;
+            return;
         }
 
         this.trades.push({
@@ -174,10 +167,8 @@ export class OrderManager implements IOrderManager {
 
         if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
             this.closeOrder(order, new Date(tradingData.timestamp));
-            closed = true;
+            return;
         }
-
-        return closed;
     }
 
     private checkTimeInForce(order: Order, tradingData: TradingData): boolean {

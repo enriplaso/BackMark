@@ -34,6 +34,12 @@ export class ExchangeSimulator implements IExchangeSimulator {
     }
     //Every time a new price comes
     public processOrders(tradingdata: TradingData) {
+        const orders = this.orderManager.getActiveOrders();
+
+        for (const order of orders) {
+            this.orderManager.processOrder(order, this.account, tradingdata);
+        }
+        /*
         const uncompletedOrders: Order[] = [];
 
         let order = this.orderManager.dequeueOrder(); //TODO: dequeue is not needed
@@ -50,7 +56,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             for (const order of uncompletedOrders) {
                 this.orderManager.pushOrder(order);
             }
-        }
+        }*/
     }
 
     public marketBuyOrder(funds: number): Order {

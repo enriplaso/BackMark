@@ -8,5 +8,5 @@ export interface IOrderManager {
     getClosedOrders(): Order[];
     cancelOrder(orderId: string, timestamp: string): boolean;
     getAllTrades(): Trade[];
-    processOrder(order: Order, account: Account, tradingData: TradingData): boolean;
+    processOrder(order: Order, account: Account, tradingData: TradingData): void;
 }
