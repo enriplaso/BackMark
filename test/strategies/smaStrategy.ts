@@ -2,6 +2,7 @@ import type { IStrategy } from '../../src/lib/IStrategy.js';
 import type { IExchangeSimulator } from '../../src/lib/exchangeSimulator/IExchangeSImulator.js';
 import type { TradingData } from '../../src/lib/exchangeSimulator/types.js';
 import { FasterSMA } from 'trading-signals';
+import { Stop } from '../../src/lib/orders/types.js';
 
 const SMA_DAYS = 10;
 
@@ -20,6 +21,11 @@ export class SmaStrategy implements IStrategy {
 
     async checkPosition(tradingData: TradingData): Promise<void> {
         const account = await this.exchangeClient.getAccount();
+
+        const hasStopLoss = this.exchangeClient.getAllOrders().filter((order) => order?.stop === Stop.LOSS);
+        if (!hasStopLoss && account.productQuantity > 0) {
+            this.exchangeClient.stopLossOrder(30000, account.productQuantity);
+        }
 
         if (account.balance <= 0) {
             return;

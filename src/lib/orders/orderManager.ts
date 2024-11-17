@@ -43,46 +43,17 @@ export class OrderManager implements IOrderManager {
 
         if (order.side === Side.BUY) {
             if (order.type === OrderType.MARKET && order.stop === undefined) {
-                const buyOderFee = this.calculateFee(order.funds!, account.fee); // FIXME: calculate based on trades and not in order
-                const wantedProductQuantity = (order.funds! - buyOderFee) / tradingData.price;
-
-                // Open a trade
-
-                if (tradingData.volume - wantedProductQuantity >= 0) {
-                    account.productQuantity = account.productQuantity + wantedProductQuantity;
-                    this.trades.push({
-                        orderId: order.id,
-                        price: tradingData.price,
-                        quantity: wantedProductQuantity,
-                        createdAt: new Date(tradingData.timestamp),
-                        side: order.side,
-                    });
-                    account.balance = account.balance - order.funds! - buyOderFee;
-
-                    this.closeOrder(order, new Date(tradingData.timestamp));
-                    closed = true;
-                } else {
-                    this.trades.push({
-                        orderId: order.id,
-                        price: tradingData.price,
-                        quantity: tradingData.volume, // cannot buy more than the available volume !!!
-                        createdAt: new Date(tradingData.timestamp),
-                        side: order.side,
-                    });
-
-                    account.productQuantity = account.productQuantity + tradingData.volume;
-                    const tradePrice = tradingData.price * tradingData.volume - buyOderFee;
-                    account.balance = account.balance - tradePrice;
-                    order.funds = order.funds! - tradePrice;
-                }
+                closed = this.triggerBuyOrder(order, account, tradingData);
             }
 
-            if (order.type === OrderType.MARKET && order.stop === Stop.ENTRY) {
-                //TODO:
+            if (order.type === OrderType.MARKET && order.stop === Stop.ENTRY && tradingData.price <= order.stopPrice!) {
+                // Once triggered stop order is converted in a Market order
+                order.stop = undefined;
+                closed = this.triggerBuyOrder(order, account, tradingData);
             }
 
-            if (order.type === OrderType.LIMIT) {
-                // TODO:
+            if (order.type === OrderType.LIMIT && tradingData.price <= order.price!) {
+                closed = this.triggerBuyOrder(order, account, tradingData);
             }
         }
 
@@ -91,11 +62,13 @@ export class OrderManager implements IOrderManager {
                 closed = this.triggerSellOrder(order, account, tradingData);
             }
             if (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) {
+                // Convert STOP to simple MARKET
+                order.stop = undefined;
                 closed = this.triggerSellOrder(order, account, tradingData);
             }
 
-            if (order.type === OrderType.LIMIT) {
-                // TODO:
+            if (order.type === OrderType.LIMIT && tradingData.price >= order.price!) {
+                closed = this.triggerSellOrder(order, account, tradingData);
             }
         }
 
@@ -113,6 +86,42 @@ export class OrderManager implements IOrderManager {
 
         const index = this.orders.findIndex((activeOrder) => order.id === activeOrder.id);
         this.orders.splice(index, 1);
+    }
+
+    private triggerBuyOrder(order: Order, account: Account, tradingData: TradingData): boolean {
+        let closed = false;
+
+        const buyOrderFee = this.calculateFee(order.funds!, account.fee);
+        const maxQuantity = (order.funds! - buyOrderFee) / tradingData.price;
+
+        if (tradingData.volume >= maxQuantity) {
+            account.productQuantity += maxQuantity;
+            account.balance -= order.funds!;
+            this.trades.push({
+                orderId: order.id,
+                price: tradingData.price,
+                quantity: maxQuantity,
+                createdAt: new Date(tradingData.timestamp),
+                side: order.side,
+            });
+
+            this.closeOrder(order, new Date(tradingData.timestamp));
+            closed = true;
+        } else {
+            const spentFunds = tradingData.volume * tradingData.price + buyOrderFee;
+            account.productQuantity += tradingData.volume;
+            account.balance -= spentFunds;
+
+            this.trades.push({
+                orderId: order.id,
+                price: tradingData.price,
+                quantity: tradingData.volume,
+                createdAt: new Date(tradingData.timestamp),
+                side: order.side,
+            });
+        }
+
+        return closed;
     }
 
     private triggerSellOrder(order: Order, account: Account, tradingData: TradingData): boolean {
