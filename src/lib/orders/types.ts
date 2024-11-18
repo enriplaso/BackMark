@@ -38,11 +38,11 @@ export type Order = {
     id: string;
     type: OrderType;
     side: Side; // buy or sell
-    quantity: number; // amount of base currency to buy/sell
     status: OrderStatus;
     timeInForce: TimeInForce;
-    filledQuantity: number; // Track how much of the order has been filled (in base currency)
-    createdAt: Date; // time at which order was placed
+    quantity?: number; // amount of base currency to buy/sell
+    filledQuantity?: number; // Track how much of the order has been filled (in base currency)
+    createdAt?: Date; // time at which order was placed
     price?: number; //price per unit of base currency (for LIMIT orders )
     funds?: number; //amount of quote currency to spend (for market orders)
     expireTime?: Date; // timestamp at which order expires

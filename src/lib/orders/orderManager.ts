@@ -121,15 +121,15 @@ export class OrderManager implements IOrderManager {
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
-        if (tradingData.volume - order.quantity >= 0) {
-            const sellOrderFee = this.calculateFee(order.quantity * tradingData.price, account.fee); // FIXME: calculate based on trades and not in order
-            account.balance = account.balance + order.quantity * tradingData.price - sellOrderFee;
-            account.productQuantity = account.productQuantity - order.quantity;
+        if (tradingData.volume - order.quantity! >= 0) {
+            const sellOrderFee = this.calculateFee(order.quantity! * tradingData.price, account.fee); // FIXME: calculate based on trades and not in order
+            account.balance = account.balance + order.quantity! * tradingData.price - sellOrderFee;
+            account.productQuantity = account.productQuantity - order.quantity!;
 
             this.trades.push({
                 orderId: order.id,
                 price: tradingData.price,
-                quantity: order.quantity,
+                quantity: order.quantity!,
                 createdAt: new Date(tradingData.timestamp),
                 side: order.side,
             });
@@ -156,7 +156,7 @@ export class OrderManager implements IOrderManager {
         account.balance = account.balance + tradingData.volume * tradingData.price - sellOrderFee;
         account.productQuantity = account.productQuantity - tradingData.volume;
 
-        order.quantity = order.quantity - tradingData.volume;
+        order.quantity = order.quantity! - tradingData.volume;
 
         if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
             this.closeOrder(order, new Date(tradingData.timestamp));
