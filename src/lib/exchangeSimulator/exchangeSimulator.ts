@@ -73,7 +73,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
         return order;
     }
 
@@ -94,7 +94,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
 
         return order;
     }
@@ -117,7 +117,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
 
         return order;
     }
@@ -145,7 +145,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             price,
         } as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
 
         return order;
     }
@@ -165,7 +165,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
         return order;
     }
     public stopLossOrder(prize: number, size: number): Order {
@@ -192,7 +192,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
-        this.orderManager.pushOrder(order);
+        this.orderManager.addOrder(order);
         return order;
     }
     public cancelOrder(id: string): boolean {

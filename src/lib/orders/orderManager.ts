@@ -1,6 +1,6 @@
 import type { Account, TradingData } from '../exchangeSimulator/types.js';
 import type { IOrderManager } from './IOrderManager.js';
-import { type Order, OrderStatus, OrderType, Side, Stop, TimeInForce, Trade } from './types.js';
+import { type Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from './types.js';
 
 export class OrderManager implements IOrderManager {
     private orders: Order[] = [];
@@ -9,14 +9,11 @@ export class OrderManager implements IOrderManager {
 
     constructor() {}
 
-    pushOrder(order: Order): void {
+    addOrder(order: Order): void {
         this.orders.push(order);
     }
     getActiveOrders(): Order[] {
         return this.orders;
-    }
-    dequeueOrder(): Order | undefined {
-        return this.orders.shift();
     }
     getClosedOrders(): Order[] {
         return this.closedOrders;
@@ -39,35 +36,31 @@ export class OrderManager implements IOrderManager {
         return this.trades;
     }
     processOrder(order: Order, account: Account, tradingData: TradingData): void {
-        if (order.side === Side.BUY && this.shouldExecuteBuyOrder(order, tradingData)) {
-            if (order.stop) {
-                order.stop = undefined; // Becomes a Market order
+        if (this.shouldExecuteOrder(order, tradingData)) {
+            if (order.side === Side.BUY) {
+                if (order.stop) {
+                    order.stop = undefined; // Becomes a Market order
+                }
+                return this.executeBuyOrder(order, account, tradingData);
             }
-            return this.executeBuyOrder(order, account, tradingData);
-        }
 
-        if (order.side === Side.SELL && this.shouldExecuteSellOrder(order, tradingData)) {
-            if (order.stop) {
-                order.stop = undefined; // Becomes a Market order
+            if (order.side === Side.SELL) {
+                if (order.stop) {
+                    order.stop = undefined; // Becomes a Market order
+                }
+                return this.executeSellOrder(order, account, tradingData);
             }
-            return this.executeSellOrder(order, account, tradingData);
         }
     }
 
-    //TODO: both should execute can be merged in one
-    private shouldExecuteBuyOrder(order: Order, tradingData: TradingData): boolean {
+    //TODO: Stop Entry and stop loss are different , please check for buy and sell
+    // IMPORTANT AND CHECK: Buy stop loss and Sell Stop Entry are not supported since simulator does not manage shorts
+    private shouldExecuteOrder(order: Order, tradingData: TradingData): boolean {
         return (
             (order.type === OrderType.MARKET && order.stop === undefined) ||
-            (order.type === OrderType.MARKET && order.stop === Stop.ENTRY && tradingData.price <= order.stopPrice!) ||
-            (order.type === OrderType.LIMIT && tradingData.price <= order.price!)
-        );
-    }
-
-    private shouldExecuteSellOrder(order: Order, tradingData: TradingData): boolean {
-        return (
-            (order.type === OrderType.MARKET && order.stop === undefined) ||
-            (order.type === OrderType.MARKET && order.stop === Stop.LOSS && tradingData.price <= order.stopPrice!) ||
-            (order.type === OrderType.LIMIT && tradingData.price >= order.price!)
+            (order.type === OrderType.MARKET && order.stop !== undefined && tradingData.price <= order.stopPrice!) ||
+            (order.side === Side.BUY && order.type === OrderType.LIMIT && tradingData.price <= order.price!) ||
+            (order.side === Side.SELL && order.type === OrderType.LIMIT && tradingData.price >= order.price!)
         );
     }
 
