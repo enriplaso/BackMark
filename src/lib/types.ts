@@ -11,6 +11,7 @@ export type BackTestResult = {
 };
 
 export type BackTestOptions = {
-    startDate?: Date;
-    endDate?: Date;
+    accountBalance: number;
+    fee: number;
+    productName?: string;
 };

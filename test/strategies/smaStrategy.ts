@@ -1,4 +1,4 @@
-import type { IStrategy } from '../../src/lib/IStrategy.js';
+import { Strategy } from '../../src/lib/Strategy.js';
 import type { IExchangeSimulator } from '../../src/lib/exchangeSimulator/IExchangeSImulator.js';
 import type { TradingData } from '../../src/lib/exchangeSimulator/types.js';
 import { FasterSMA } from 'trading-signals';
@@ -7,14 +7,15 @@ import { IExchangeClient } from '../../src/lib/exchangeSimulator/IExchangeClient
 
 const SMA_DAYS = 10;
 
-export class SmaStrategy implements IStrategy {
+export class SmaStrategy extends Strategy {
     private sma: FasterSMA;
     private accumulatedDailyPrices: number[];
     private previusData: TradingData | undefined = undefined;
     private daysCount: number;
     private hasTradedToday = false;
 
-    constructor(private readonly exchangeClient: IExchangeClient) {
+    constructor(protected readonly exchangeClient: IExchangeClient) {
+        super(exchangeClient);
         this.sma = new FasterSMA(SMA_DAYS);
         this.accumulatedDailyPrices = [];
         this.daysCount = 0;
