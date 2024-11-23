@@ -1,6 +1,6 @@
 import { Account, TradingData } from '../../src/lib/exchange/types.js';
 import { OrderManager } from '../../src/lib/orders/orderManager.js';
-import { Order, OrderStatus, OrderType, Side, TimeInForce } from '../../src/lib/orders/types.js';
+import { Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from '../../src/lib/orders/types.js';
 import { expect } from 'chai';
 import 'mocha';
 
@@ -28,7 +28,7 @@ describe('OrderManager', () => {
                 side: Side.BUY,
                 funds: 1000,
                 status: OrderStatus.OPEN,
-                timeInForce: TimeInForce.GOOD_TILL_TIME,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
             orderManager.addOrder(order);
 
@@ -38,39 +38,81 @@ describe('OrderManager', () => {
     });
 
     describe('cancelOrder', () => {
-        it('should cancel an active order', () => {
+        it('should cancel an active order and move it to closed orders', () => {
             const order: Order = {
                 id: '1',
                 type: OrderType.MARKET,
                 side: Side.BUY,
                 funds: 1000,
                 status: OrderStatus.OPEN,
-                timeInForce: TimeInForce.GOOD_TILL_TIME,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
             orderManager.addOrder(order);
 
-            const result = orderManager.cancelOrder('1', Date.now());
-            expect(result).to.be.true;
-            expect(orderManager.getActiveOrders()).to.have.lengthOf(0);
+            orderManager.cancelOrder('1', Date.now());
+
+            expect(orderManager.getActiveOrders()).to.be.empty;
             expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
             expect(orderManager.getClosedOrders()[0].status).to.equal(OrderStatus.DONE);
         });
 
-        it('should return false for non-existent orders', () => {
-            const result = orderManager.cancelOrder('non-existent', Date.now());
-            expect(result).to.be.false;
+        it('should return for non-existent orders', () => {
+            const order: Order = {
+                id: '1',
+                type: OrderType.MARKET,
+                side: Side.BUY,
+                funds: 1000,
+                status: OrderStatus.OPEN,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+            };
+            orderManager.addOrder(order);
+
+            orderManager.cancelOrder('non-existent', Date.now());
+
+            expect(orderManager.getActiveOrders()).to.have.lengthOf(1);
+            expect(orderManager.getClosedOrders()).to.be.empty;
+        });
+    });
+
+    describe('cancelAllOrders', () => {
+        it('should cancel all active orders', () => {
+            const orders: Order[] = [
+                {
+                    id: '1',
+                    type: OrderType.MARKET,
+                    side: Side.BUY,
+                    funds: 1000,
+                    status: OrderStatus.OPEN,
+                    timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+                },
+                {
+                    id: '2',
+                    type: OrderType.LIMIT,
+                    side: Side.SELL,
+                    price: 120,
+                    quantity: 50,
+                    status: OrderStatus.OPEN,
+                    timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+                },
+            ];
+            orders.forEach((order) => orderManager.addOrder(order));
+
+            orderManager.cancelAllOrders(Date.now());
+
+            expect(orderManager.getActiveOrders()).to.be.empty;
+            expect(orderManager.getClosedOrders()).to.have.lengthOf(2);
         });
     });
 
     describe('processOrder', () => {
-        it('should process and execute a market buy order', () => {
+        it('should execute a market buy order', () => {
             const order: Order = {
                 id: '1',
                 type: OrderType.MARKET,
                 side: Side.BUY,
                 funds: 5000,
                 status: OrderStatus.OPEN,
-                timeInForce: TimeInForce.GOOD_TILL_TIME,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
 
             const tradingData: TradingData = {
@@ -78,14 +120,20 @@ describe('OrderManager', () => {
                 volume: 60,
                 timestamp: Date.now(),
             };
+            const beforeTradeBalance = account.balance;
+            const appliedFee = (account.fee / 100) * order.funds!;
 
             orderManager.addOrder(order);
             orderManager.processOrder(order, account, tradingData);
 
-            expect(account.balance).to.be.closeTo(5000, 0.1);
-            expect(account.productQuantity).to.be.closeTo(50, 0.1);
+            const trades = orderManager.getAllTrades();
+            expect(account.balance).to.equal(beforeTradeBalance - order.funds! - appliedFee);
+            expect(account.productQuantity).to.equal((order.funds! - appliedFee) / tradingData.price);
             expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
-            expect(orderManager.getActiveOrders()).to.have.lengthOf(0);
+            expect(orderManager.getActiveOrders()).to.be.empty;
+            expect(trades).to.have.lengthOf(1);
+            expect(trades[0].price).to.equal(order.funds! + appliedFee);
+            expect(trades[0].side).to.equal('buy');
         });
 
         it('should process and partially execute a limit sell order', () => {
@@ -125,7 +173,7 @@ describe('OrderManager', () => {
                 side: Side.BUY,
                 funds: 1000,
                 status: OrderStatus.OPEN,
-                timeInForce: TimeInForce.GOOD_TILL_TIME,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
 
             const tradingData: TradingData = {
@@ -134,7 +182,8 @@ describe('OrderManager', () => {
                 timestamp: Date.now(),
             };
 
-            expect((orderManager as any).shouldExecuteOrder(order, tradingData)).to.be.true;
+            const result = (orderManager as any).shouldExecuteOrder(order, tradingData);
+            expect(result).to.be.true;
         });
 
         it('should not execute a limit buy order if price is too high', () => {
@@ -145,7 +194,7 @@ describe('OrderManager', () => {
                 price: 90,
                 funds: 1000,
                 status: OrderStatus.OPEN,
-                timeInForce: TimeInForce.GOOD_TILL_TIME,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
 
             const tradingData: TradingData = {
@@ -154,7 +203,8 @@ describe('OrderManager', () => {
                 timestamp: Date.now(),
             };
 
-            expect((orderManager as any).shouldExecuteOrder(order, tradingData)).to.be.false;
+            const result = (orderManager as any).shouldExecuteOrder(order, tradingData);
+            expect(result).to.be.false;
         });
     });
 
@@ -178,6 +228,26 @@ describe('OrderManager', () => {
             const result = (orderManager as any).checkTimeInForce(order, tradingData);
             expect(result).to.be.false;
             expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
+        });
+
+        it('should keep the order active for GOOD_TILL_CANCEL', () => {
+            const order: Order = {
+                id: '1',
+                type: OrderType.MARKET,
+                side: Side.BUY,
+                funds: 1000,
+                status: OrderStatus.OPEN,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+            };
+
+            const tradingData: TradingData = {
+                price: 100,
+                volume: 10,
+                timestamp: Date.now(),
+            };
+
+            const result = (orderManager as any).checkTimeInForce(order, tradingData);
+            expect(result).to.be.true;
         });
     });
 });

@@ -1,6 +1,6 @@
 import type { Account, TradingData } from '../exchange/types.js';
 import type { IOrderManager } from './IOrderManager.js';
-import { type Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from './types.js';
+import { type Order, OrderStatus, OrderType, Side, Stop, TimeInForce, Trade } from './types.js';
 
 export class OrderManager implements IOrderManager {
     private orders: Order[] = [];
@@ -23,10 +23,10 @@ export class OrderManager implements IOrderManager {
         return this.trades;
     }
 
-    public cancelOrder(orderId: string, timestamp: number): boolean {
+    public cancelOrder(orderId: string, timestamp: number): void {
         const index = this.orders.findIndex((order) => orderId === order.id);
         if (index === -1) {
-            return false;
+            return;
         }
         const order = this.orders[index];
         order.doneAt = new Date(timestamp);
@@ -35,7 +35,6 @@ export class OrderManager implements IOrderManager {
         this.closedOrders.push(order);
 
         this.orders.splice(index, 1); // Remove order form  active orders
-        return true;
     }
 
     public cancelAllOrders(timestamp: number): void {
@@ -67,12 +66,12 @@ export class OrderManager implements IOrderManager {
         }
     }
 
-    //TODO: Stop Entry and stop loss are different , please check for buy and sell
-    // IMPORTANT AND CHECK: Buy stop loss and Sell Stop Entry are not supported since simulator does not manage shorts
+    // IMPORTANT: Buy stop loss and Sell Stop Entry are not supported since simulator does not handle shorts
     private shouldExecuteOrder(order: Order, tradingData: TradingData): boolean {
         return (
             (order.type === OrderType.MARKET && order.stop === undefined) ||
-            (order.type === OrderType.MARKET && order.stop !== undefined && tradingData.price <= order.stopPrice!) ||
+            (order.stop == Stop.LOSS && tradingData.price <= order.stopPrice!) ||
+            (order.stop == Stop.ENTRY && tradingData.price >= order.stopPrice!) ||
             (order.side === Side.BUY && order.type === OrderType.LIMIT && tradingData.price <= order.price!) ||
             (order.side === Side.SELL && order.type === OrderType.LIMIT && tradingData.price >= order.price!)
         );
