@@ -7,18 +7,23 @@ export class OrderManager implements IOrderManager {
     private closedOrders: Order[] = [];
     private trades: Trade[] = [];
 
-    constructor() {}
-
-    addOrder(order: Order): void {
+    public addOrder(order: Order): void {
         this.orders.push(order);
     }
-    getActiveOrders(): Order[] {
+
+    public getActiveOrders(): Order[] {
         return this.orders;
     }
-    getClosedOrders(): Order[] {
+
+    public getClosedOrders(): Order[] {
         return this.closedOrders;
     }
-    cancelOrder(orderId: string, timestamp: string): boolean {
+
+    public getAllTrades(): Trade[] {
+        return this.trades;
+    }
+
+    public cancelOrder(orderId: string, timestamp: string): boolean {
         const index = this.orders.findIndex((order) => orderId === order.id);
         if (index === -1) {
             return false;
@@ -32,10 +37,8 @@ export class OrderManager implements IOrderManager {
         this.orders.splice(index, 1); // Remove order form  active orders
         return true;
     }
-    getAllTrades(): Trade[] {
-        return this.trades;
-    }
-    processOrder(order: Order, account: Account, tradingData: TradingData): void {
+
+    public processOrder(order: Order, account: Account, tradingData: TradingData): void {
         if (this.shouldExecuteOrder(order, tradingData)) {
             if (order.side === Side.BUY) {
                 if (order.stop) {
@@ -68,9 +71,9 @@ export class OrderManager implements IOrderManager {
         return funds / (fee * 100);
     }
 
-    private closeOrder(order: Order, doneAt: Date): void {
+    private closeOrder(order: Order, doneAt: number): void {
         order.status = OrderStatus.DONE;
-        order.doneAt = doneAt;
+        order.doneAt = new Date(doneAt);
         this.closedOrders.push(order);
 
         const index = this.orders.findIndex((activeOrder) => order.id === activeOrder.id);
@@ -83,16 +86,19 @@ export class OrderManager implements IOrderManager {
 
         if (tradingData.volume >= maxQuantity) {
             account.productQuantity += maxQuantity;
-            account.balance -= order.funds!;
+            const tradeTotalPrice = order.funds! + buyOrderFee;
+            account.balance -= tradeTotalPrice;
             this.trades.push({
                 orderId: order.id,
-                price: tradingData.price,
+                price: tradeTotalPrice,
                 quantity: maxQuantity,
                 createdAt: new Date(tradingData.timestamp),
                 side: order.side,
+                balanceAfterTrade: account.balance,
+                holdingsAfterTrade: account.productQuantity,
             });
 
-            this.closeOrder(order, new Date(tradingData.timestamp));
+            this.closeOrder(order, tradingData.timestamp);
             return;
         }
 
@@ -102,39 +108,49 @@ export class OrderManager implements IOrderManager {
             return;
         }
 
-        const spentFunds = tradingData.volume * tradingData.price + buyOrderFee;
+        // Recalculate fee based on trade
+        const tradePrice = tradingData.volume * tradingData.price;
+        const tradeFee = this.calculateFee(tradePrice, account.fee);
+        const tradeTotalPrice = tradePrice + tradeFee;
         account.productQuantity += tradingData.volume;
-        account.balance -= spentFunds;
+        account.balance -= tradeTotalPrice;
 
         this.trades.push({
             orderId: order.id,
-            price: tradingData.price,
+            price: tradeTotalPrice,
             quantity: tradingData.volume,
             createdAt: new Date(tradingData.timestamp),
             side: order.side,
+            balanceAfterTrade: account.balance,
+            holdingsAfterTrade: account.productQuantity,
         });
 
         if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
-            this.closeOrder(order, new Date(tradingData.timestamp));
+            this.closeOrder(order, tradingData.timestamp);
             return;
         }
+
+        order.funds! -= tradePrice; // adjust order after trade
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
         if (tradingData.volume - order.quantity! >= 0) {
-            const sellOrderFee = this.calculateFee(order.quantity! * tradingData.price, account.fee); // FIXME: calculate based on trades and not in order
-            account.balance = account.balance + order.quantity! * tradingData.price - sellOrderFee;
-            account.productQuantity = account.productQuantity - order.quantity!;
+            const sellOrderFee = this.calculateFee(order.quantity! * tradingData.price, account.fee);
+            const tradeEarings = order.quantity! * tradingData.price - sellOrderFee;
+            account.balance += tradeEarings;
+            account.productQuantity -= order.quantity!;
 
             this.trades.push({
                 orderId: order.id,
-                price: tradingData.price,
+                price: tradeEarings,
                 quantity: order.quantity!,
                 createdAt: new Date(tradingData.timestamp),
                 side: order.side,
+                balanceAfterTrade: account.balance,
+                holdingsAfterTrade: account.productQuantity,
             });
 
-            this.closeOrder(order, new Date(tradingData.timestamp));
+            this.closeOrder(order, tradingData.timestamp);
             return;
         }
 
@@ -144,24 +160,27 @@ export class OrderManager implements IOrderManager {
             return;
         }
 
+        const sellTradeFee = this.calculateFee(tradingData.volume * tradingData.price, account.fee);
+        const tradeEarings = tradingData.volume * tradingData.price - sellTradeFee;
+        account.balance += tradeEarings;
+        account.productQuantity -= tradingData.volume;
+
         this.trades.push({
             orderId: order.id,
-            price: tradingData.price,
+            price: tradeEarings,
             quantity: tradingData.volume, // cannot sell more than the available volume !!!
             createdAt: new Date(tradingData.timestamp),
             side: order.side,
+            balanceAfterTrade: account.balance,
+            holdingsAfterTrade: account.productQuantity,
         });
 
-        const sellOrderFee = this.calculateFee(tradingData.volume * tradingData.price, account.fee);
-        account.balance = account.balance + tradingData.volume * tradingData.price - sellOrderFee;
-        account.productQuantity = account.productQuantity - tradingData.volume;
-
-        order.quantity = order.quantity! - tradingData.volume;
-
         if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
-            this.closeOrder(order, new Date(tradingData.timestamp));
+            this.closeOrder(order, tradingData.timestamp);
             return;
         }
+
+        order.quantity! -= tradingData.volume; // remaining volume for hte order
     }
 
     private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
@@ -170,14 +189,14 @@ export class OrderManager implements IOrderManager {
             case TimeInForce.GOOD_TILL_CANCEL: // default
                 break; // continue
             case TimeInForce.FILL_OR_KILL:
-                this.closeOrder(order, new Date(tradingData.timestamp));
+                this.closeOrder(order, tradingData.timestamp);
                 shouldContinue = false;
                 break;
             case TimeInForce.INMEDIATE_OR_CANCELL:
                 break;
             case TimeInForce.GOOD_TILL_TIME:
                 if (order.expireTime && order?.expireTime?.getTime() >= tradingData.timestamp) {
-                    this.closeOrder(order, new Date(tradingData.timestamp));
+                    this.closeOrder(order, tradingData.timestamp);
                     shouldContinue = false;
                 }
                 break;
