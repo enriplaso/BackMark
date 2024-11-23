@@ -30,7 +30,7 @@ export class BackTest implements IBackTest {
     }
 
     async run(): Promise<void> {
-        console.time('BackTest-time');
+        const startTime = Date.now();
         showLoading('Reading market data history file line by line');
 
         try {
@@ -48,8 +48,8 @@ export class BackTest implements IBackTest {
                 }
             }
 
-            stopLoading(`Reading file line by line done with a total of ${lines} lines`);
-            console.timeEnd('BackTest-time');
+            stopLoading(`Reading file line by line done with a total of ${lines} lin es`);
+            console.info(`Test duration: ${(Date.now() - startTime) / 1000}s`);
         } catch (error) {
             console.error(error);
         }

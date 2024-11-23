@@ -67,7 +67,7 @@ export class SmaStrategy extends Strategy {
             }
 
             if (tradingData.price > this.sma.getResult() + this.sma.getResult() * 0.02) {
-                const bitcoin = this.exchangeClient.getProductSize();
+                const bitcoin = this.exchangeClient.getAccount().productQuantity;
                 if (bitcoin > 0) {
                     this.exchangeClient.marketSellOrder(bitcoin);
                 }

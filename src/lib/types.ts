@@ -12,6 +12,6 @@ export type BackTestResult = {
 
 export type BackTestOptions = {
     accountBalance: number;
-    fee: number;
+    fee: number; // Percentage that the broker/exchange gets in each trade
     productName?: string;
 };

@@ -1,4 +1,4 @@
-import { type Order, type Trade, OrderStatus } from '../orders/types.js';
+import { type Order, type Trade, OrderStatus, TimeInForce } from '../orders/types.js';
 import { Account } from './types.js';
 
 /**
@@ -10,27 +10,26 @@ export interface IExchangeClient {
      * Creates a buy order that should be filled at current market price
      * @param funds is the ammount of currency you want to buy in USD (eg: 1000)
      */
-    marketBuyOrder(funds: number): Order;
+    marketBuyOrder(funds: number, timeInForce?: TimeInForce): Order;
 
     /**
      * Creates a Sell order that should be filled at current market price
      * @param size the amount cryptocurrency you want to sell (eg<. 0.5 of (BTC))
      */
-    marketSellOrder(size: number): Order;
+    marketSellOrder(size: number, timeInForce?: TimeInForce): Order;
     /**
      *
      * @param productId
      * @param price
      * @param funds
      */
-    limitBuyOrder(price: number, funds: number): Order;
-    limitSellOrder(price: number, size: number): Order;
-    stopEntryOrder(prize: number, funds: number): Order;
-    stopLossOrder(prize: number, size: number): Order;
+    limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce): Order;
+    limitSellOrder(price: number, size: number, timeInForce?: TimeInForce): Order;
+    stopEntryOrder(prize: number, funds: number, timeInForce?: TimeInForce): Order;
+    stopLossOrder(prize: number, size: number, timeInForce?: TimeInForce): Order;
     cancelOrder(id: string): boolean;
     getAllOrders(filter?: OrderStatus[]): Order[];
     getAllTrades(): Trade[];
     cancelAllOrders(): void;
     getAccount(): Account;
-    getProductSize(): number;
 }

@@ -196,10 +196,4 @@ export class ExchangeSimulator implements IExchangeSimulator {
     public getAccount(): Account {
         return this.account;
     }
-    public getProductSize(): number {
-        return this.account.productQuantity;
-    }
-    public setProductSize(size: number) {
-        this.account.productQuantity = size;
-    }
 }

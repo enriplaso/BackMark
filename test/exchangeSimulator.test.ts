@@ -1,4 +1,4 @@
-/*import { fail } from 'assert';
+import { fail } from 'assert';
 import { expect } from 'chai';
 import 'mocha';
 import { IExchangeSimulator } from '../src/lib/exchangeSimulator/IExchangeSImulator.js';
@@ -40,7 +40,6 @@ describe('Exchange Simulator tests', function () {
 
         it('Should create a market sell order', async function () {
             const quantity = 0.5;
-            exchangeSimulator.setProductSize(3);
 
             const order = await exchangeSimulator.marketSellOrder(quantity);
 
@@ -69,7 +68,7 @@ describe('Exchange Simulator tests', function () {
             exchangeSimulator.processOrders(tradingData);
 
             const orders = exchangeSimulator.getAllOrders();
-            const productSize = exchangeSimulator.getProductSize();
+            const productSize = exchangeSimulator.getAccount().productQuantity;
             const accountBalance = exchangeSimulator.getAccount().balance;
 
             expect(orders.length).to.equal(0);
@@ -102,7 +101,7 @@ describe('Exchange Simulator tests', function () {
             exchangeSimulator.processOrders(tradingData2);
 
             const orders = exchangeSimulator.getAllOrders();
-            const productSize = exchangeSimulator.getProductSize();
+            const productSize = exchangeSimulator.getAccount().productQuantity;
             const accountBalance = exchangeSimulator.getAccount().balance;
             const trades = exchangeSimulator.getAllTrades();
 
@@ -136,7 +135,7 @@ describe('Exchange Simulator tests', function () {
             exchangeSimulator.processOrders(tradingData);
 
             const orders = exchangeSimulator.getAllOrders();
-            const productSize = exchangeSimulator.getProductSize();
+            const productSize = exchangeSimulator.getAccount().productQuantity;
             const accountBalance = exchangeSimulator.getAccount().balance;
 
             expect(orders.length).to.equal(0);
@@ -175,7 +174,7 @@ describe('Exchange Simulator tests', function () {
             exchangeSimulator.processOrders(tradingData2);
 
             const orders = exchangeSimulator.getAllOrders();
-            const productSize = exchangeSimulator.getProductSize();
+            const productSize = exchangeSimulator.getAccount().productQuantity;
             const accountBalance = exchangeSimulator.getAccount().balance;
             const trades = exchangeSimulator.getAllTrades();
 
@@ -219,7 +218,7 @@ describe('Exchange Simulator tests', function () {
             exchangeSimulator.processOrders(tradingData2);
 
             const orders = exchangeSimulator.getAllOrders();
-            const productSize = exchangeSimulator.getProductSize();
+            const productSize = exchangeSimulator.getAccount().productQuantity;
             const accountBalance = exchangeSimulator.getAccount().balance;
 
             expect(orders.length).to.equal(0);
@@ -234,5 +233,3 @@ function assertIsError(error: unknown): asserts error is Error {
         throw new Error('Error is not an instance of error');
     }
 }
-
-*/
