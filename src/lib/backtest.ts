@@ -1,13 +1,13 @@
 import type { IBackTest } from './IBacktest.js';
-import type { IExchangeSimulator } from './exchangeSimulator/IExchangeSImulator.js';
-import type { TradingData } from './exchangeSimulator/types.js';
+import type { IExchangeSimulator } from './exchange/IExchangeSImulator.js';
+import type { TradingData } from './exchange/types.js';
 import type { BackTestOptions, BackTestResult } from './types.js';
 
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
 import { showLoading, stopLoading } from './util/loadingSpinner.js';
-import { IExchangeClient } from './exchangeSimulator/IExchangeClient.js';
-import { ExchangeSimulator } from './exchangeSimulator/exchangeSimulator.js';
+import { IExchangeClient } from './exchange/IExchangeClient.js';
+import { ExchangeSimulator } from './exchange/exchangeSimulator.js';
 import { Strategy } from './Strategy.js';
 
 export class BackTest implements IBackTest {

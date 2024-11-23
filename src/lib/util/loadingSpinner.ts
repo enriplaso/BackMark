@@ -32,7 +32,7 @@ export function stopLoading(message: string): void {
         // Clear the spinner and display the final message
         readline.clearLine(process.stdout, 0);
         readline.cursorTo(process.stdout, 0);
-        console.log(`${message}... done`);
+        console.info(`${message}... done`);
     } else {
         console.warn('No spinner is running to stop.');
     }

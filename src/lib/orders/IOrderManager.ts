@@ -1,4 +1,4 @@
-import { Account, TradingData } from '../exchangeSimulator/types.js';
+import { Account, TradingData } from '../exchange/types.js';
 import type { Order, Trade } from './types.js';
 
 export interface IOrderManager {

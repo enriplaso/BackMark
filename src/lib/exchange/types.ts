@@ -12,7 +12,7 @@ export type Account = {
     available: number; // how much you can cash out
     currency: string;
     productQuantity: number;
-    fee: number; // Fee in percentage that the exchange/broker will chare for each Trades
+    fee: number; // Fee in percentage that the exchange/broker will add for each Trades
 };
 // Represent the price /volume of an assent in a concreate time
 export type TradingData = {

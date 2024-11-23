@@ -1,9 +1,9 @@
 import { Strategy } from '../../src/lib/Strategy.js';
-import type { IExchangeSimulator } from '../../src/lib/exchangeSimulator/IExchangeSImulator.js';
-import type { TradingData } from '../../src/lib/exchangeSimulator/types.js';
+import type { IExchangeSimulator } from '../../src/lib/exchange/IExchangeSImulator.js';
+import type { TradingData } from '../../src/lib/exchange/types.js';
 import { FasterSMA } from 'trading-signals';
 import { Stop } from '../../src/lib/orders/types.js';
-import { IExchangeClient } from '../../src/lib/exchangeSimulator/IExchangeClient.js';
+import { IExchangeClient } from '../../src/lib/exchange/IExchangeClient.js';
 
 const SMA_DAYS = 10;
 

@@ -1,5 +1,5 @@
-import { IExchangeClient } from './exchangeSimulator/IExchangeClient';
-import { TradingData } from './exchangeSimulator/types';
+import { IExchangeClient } from './exchange/IExchangeClient';
+import { TradingData } from './exchange/types';
 
 export abstract class Strategy {
     constructor(protected readonly exchangeClient: IExchangeClient) {}

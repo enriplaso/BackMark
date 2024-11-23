@@ -1,6 +1,6 @@
-import { Account, TradingData } from '../src/lib/exchangeSimulator/types.js';
-import { OrderManager } from '../src/lib/orders/orderManager.js';
-import { Order, OrderStatus, OrderType, Side, TimeInForce } from '../src/lib/orders/types.js';
+import { Account, TradingData } from '../../src/lib/exchange/types.js';
+import { OrderManager } from '../../src/lib/orders/orderManager.js';
+import { Order, OrderStatus, OrderType, Side, TimeInForce } from '../../src/lib/orders/types.js';
 import { expect } from 'chai';
 import 'mocha';
 

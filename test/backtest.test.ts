@@ -5,7 +5,7 @@ import { SmaStrategy } from './strategies/smaStrategy.js';
 //Data from https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution
 // https://www.kaggle.com/datasets/tencars/392-crypto-currency-pairs-at-minute-resolution?select=bsvusd.csv
 
-describe.only('backTest tests', function () {
+describe('backTest tests', function () {
     it('Should run a back test for a given strategy', async function () {
         const options = {
             accountBalance: 1000,
