@@ -35,18 +35,12 @@ export class OrderManager implements IOrderManager {
         }
         const order = this.orders[index];
         this.closeOrder(order, timestamp, 'Cancelled');
-        console.log(`Order cancelled: ${orderId}`);
     }
 
     public cancelAllOrders(timestamp: number): void {
-        this.orders.forEach((order) => {
-            order.doneAt = new Date(timestamp);
-            order.doneReason = 'Cancelled';
-            order.status = OrderStatus.DONE;
-            this.closedOrders.push(order);
+        [...this.orders].forEach((order) => {
+            this.closeOrder(order, timestamp, 'Cancelled');
         });
-
-        this.orders = [];
     }
 
     public processOrder(order: Order, account: Account, tradingData: TradingData): void {
@@ -54,9 +48,7 @@ export class OrderManager implements IOrderManager {
             return;
         }
 
-        if (order.stop) {
-            order.stop = undefined; // Becomes a Market order
-        }
+        this.transformStopToMarketOrder(order);
 
         if (order.side === Side.BUY) {
             this.executeBuyOrder(order, account, tradingData);
@@ -139,27 +131,30 @@ export class OrderManager implements IOrderManager {
     }
 
     private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
-        let shouldContinue = true;
         switch (order.timeInForce) {
             case TimeInForce.GOOD_TILL_CANCEL: // default
-                break; // continue
+                return true; // continue
             case TimeInForce.FILL_OR_KILL:
                 this.closeOrder(order, tradingData.timestamp, 'Expired');
-                shouldContinue = false;
-                break;
+                return false;
             case TimeInForce.INMEDIATE_OR_CANCELL:
                 this.closeOrder(order, tradingData.timestamp, 'Partially Filled');
-                shouldContinue = false;
-                break;
+                return false;
             case TimeInForce.GOOD_TILL_TIME:
-                if (order.expireTime && order?.expireTime?.getTime() >= tradingData.timestamp) {
+                if (order.expireTime && order.expireTime.getTime() >= tradingData.timestamp) {
                     this.closeOrder(order, tradingData.timestamp, 'Expired');
-                    shouldContinue = false;
+                    return false;
                 }
-                break;
         }
 
-        return shouldContinue;
+        return true;
+    }
+
+    private transformStopToMarketOrder(order: Order): void {
+        if (order.stop) {
+            order.type = OrderType.MARKET;
+            order.stop = undefined;
+        }
     }
 
     private recordTrade(order: Order, price: number, quantity: number, account: Account, timestamp: number): void {
