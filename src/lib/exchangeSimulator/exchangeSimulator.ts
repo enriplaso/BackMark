@@ -8,40 +8,33 @@ import { IOrderManager } from '../orders/IOrderManager.js';
 import { OrderManager } from '../orders/orderManager.js';
 
 export class ExchangeSimulator implements IExchangeSimulator {
-    private account!: Account;
-    private fee = 1.2; // TODO: Fee should be a percentage of the price e.g 1000 Usd -> 25 us 2.5
+    private account: Account;
+    private currentTradeTimestamp: number = Date.now();
 
     constructor(
         private readonly options: SimulationOptions,
         private readonly orderManager: IOrderManager = new OrderManager(),
     ) {
-        this.init();
-        if (this.options.fee) {
-            this.fee = this.options.fee;
-        }
-    }
-
-    public init() {
         this.account = {
             id: randomUUID(),
             balance: this.options.accountBalance,
-            holds: 0,
             available: this.options.accountBalance,
-            currency: 'usd',
+            currency: 'USD',
             productQuantity: 0,
-            fee: this.options.fee || 1.5,
+            fee: this.options.fee || 0,
         };
     }
 
     public processOrders(tradingData: TradingData) {
+        this.currentTradeTimestamp = tradingData.timestamp;
         const orders = this.orderManager.getActiveOrders();
         for (const order of orders) {
             this.orderManager.processOrder(order, this.account, tradingData);
         }
     }
 
-    public marketBuyOrder(funds: number): Order {
-        if (funds + this.fee > this.account.balance) {
+    public marketBuyOrder(funds: number, timeInForce?: TimeInForce): Order {
+        if (funds + this.account.fee > this.account.balance) {
             throw new Error('There is not enough funds in the account');
         }
         const order: Order = {
@@ -49,8 +42,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
             side: Side.BUY,
             funds,
             type: OrderType.MARKET,
-            timeInForce: TimeInForce.GOOD_TILL_CANCEL,
-            createdAt: new Date(), // is not relevant for the simulator
+            timeInForce: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
+            createdAt: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         };
 
@@ -58,7 +51,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         return order;
     }
 
-    public marketSellOrder(size: number): Order {
+    public marketSellOrder(size: number, timeInForce?: TimeInForce): Order {
         if (size <= 0) {
             throw new Error('Size must be a value greater than 0');
         }
@@ -70,8 +63,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
             side: Side.SELL,
             quantity: size,
             type: OrderType.MARKET,
-            timeInForce: TimeInForce.GOOD_TILL_CANCEL,
-            createdAt: new Date(),
+            timeInForce: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
+            createdAt: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         } as Order;
 
@@ -79,8 +72,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         return order;
     }
-    public limitBuyOrder(price: number, funds: number): Order {
-        if (funds + this.fee > this.account.balance) {
+    public limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce): Order {
+        if (funds + this.account.fee > this.account.balance) {
             throw new Error('There is not enough funds in the account');
         }
         if (price <= 0) {
@@ -92,9 +85,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
             side: Side.BUY,
             funds,
             type: OrderType.LIMIT,
-            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
+            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
             price,
-            created_at: null, // is not relevant for the simulator
+            created_at: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
@@ -102,36 +95,9 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
         return order;
     }
-    public limitSellOrder(price: number, size: number): Order {
-        if (size <= 0) {
-            throw new Error('Size must be a value greater than 0'); // TODO: refactor to Typescript assertions
-        }
 
-        if (size > this.account.productQuantity) {
-            throw new Error('There is not enough amount of the current product to sell');
-        }
-
-        if (price <= 0) {
-            throw new Error('Price must be greater than 0');
-        }
-
-        const order = {
-            id: randomUUID(),
-            side: Side.SELL,
-            quantity: size,
-            type: OrderType.LIMIT,
-            timeInForce: TimeInForce.GOOD_TILL_CANCEL,
-            createdAt: new Date(),
-            status: OrderStatus.RECEIVED,
-            price,
-        } as Order;
-
-        this.orderManager.addOrder(order);
-
-        return order;
-    }
-    public stopEntryOrder(prize: number, funds: number): Order {
-        if (funds + this.fee > this.account.balance) {
+    public stopEntryOrder(prize: number, funds: number, timeInForce?: TimeInForce): Order {
+        if (funds + this.account.fee > this.account.balance) {
             throw new Error('There is not enough funds in the account');
         }
         const order = {
@@ -141,15 +107,15 @@ export class ExchangeSimulator implements IExchangeSimulator {
             stop_price: prize,
             funds,
             type: OrderType.MARKET,
-            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
-            created_at: null, // is not relevant for the simulator
+            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
+            created_at: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
         this.orderManager.addOrder(order);
         return order;
     }
-    public stopLossOrder(prize: number, size: number): Order {
+    public stopLossOrder(prize: number, size: number, timeInForce?: TimeInForce): Order {
         if (size <= 0) {
             throw new Error('Size must be a value greater than 0');
         }
@@ -168,16 +134,16 @@ export class ExchangeSimulator implements IExchangeSimulator {
             stop_price: prize,
             size,
             type: OrderType.MARKET,
-            time_in_force: TimeInForce.GOOD_TILL_CANCEL,
-            created_at: null, // is not relevant for the simulator
+            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
+            created_at: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         } as unknown as Order;
 
         this.orderManager.addOrder(order);
         return order;
     }
-    public cancelOrder(id: string): boolean {
-        return this.orderManager.cancelOrder(id, new Date().getTime().toString());
+    public cancelOrder(id: string): void {
+        this.orderManager.cancelOrder(id, this.currentTradeTimestamp);
     }
 
     public getAllOrders(filter?: OrderStatus[]): Order[] {
@@ -191,7 +157,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         return this.orderManager.getAllTrades();
     }
     public cancelAllOrders() {
-        throw new Error('Method not implemented.');
+        this.orderManager.cancelAllOrders(this.currentTradeTimestamp);
     }
     public getAccount(): Account {
         return this.account;

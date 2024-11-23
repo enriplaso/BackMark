@@ -14,7 +14,6 @@ describe('OrderManager', () => {
             id: '1',
             balance: 10000,
             available: 10000,
-            holds: 0,
             fee: 0.1,
             productQuantity: 0,
             currency: 'usdt',
@@ -50,7 +49,7 @@ describe('OrderManager', () => {
             };
             orderManager.addOrder(order);
 
-            const result = orderManager.cancelOrder('1', new Date().toISOString());
+            const result = orderManager.cancelOrder('1', Date.now());
             expect(result).to.be.true;
             expect(orderManager.getActiveOrders()).to.have.lengthOf(0);
             expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
@@ -58,7 +57,7 @@ describe('OrderManager', () => {
         });
 
         it('should return false for non-existent orders', () => {
-            const result = orderManager.cancelOrder('non-existent', new Date().toISOString());
+            const result = orderManager.cancelOrder('non-existent', Date.now());
             expect(result).to.be.false;
         });
     });

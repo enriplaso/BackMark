@@ -23,7 +23,7 @@ export class OrderManager implements IOrderManager {
         return this.trades;
     }
 
-    public cancelOrder(orderId: string, timestamp: string): boolean {
+    public cancelOrder(orderId: string, timestamp: number): boolean {
         const index = this.orders.findIndex((order) => orderId === order.id);
         if (index === -1) {
             return false;
@@ -36,6 +36,17 @@ export class OrderManager implements IOrderManager {
 
         this.orders.splice(index, 1); // Remove order form  active orders
         return true;
+    }
+
+    public cancelAllOrders(timestamp: number): void {
+        this.orders.forEach((order) => {
+            order.doneAt = new Date(timestamp);
+            order.doneReason = 'Cancelled';
+            order.status = OrderStatus.DONE;
+            this.closedOrders.push(order);
+        });
+
+        this.orders = [];
     }
 
     public processOrder(order: Order, account: Account, tradingData: TradingData): void {

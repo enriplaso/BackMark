@@ -48,7 +48,7 @@ export class BackTest implements IBackTest {
                 }
             }
 
-            stopLoading(`Reading file line by line done with a total of ${lines} lin es`);
+            stopLoading(`Reading file line by line done with a total of ${lines} lines`);
             console.info(`Test duration: ${(Date.now() - startTime) / 1000}s`);
         } catch (error) {
             console.error(error);

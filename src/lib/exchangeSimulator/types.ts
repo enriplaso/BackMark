@@ -9,11 +9,10 @@ export type SimulationOptions = {
 export type Account = {
     id: string;
     balance: number;
-    holds: number; // Amount of cash hold in pending order
     available: number; // how much you can cash out
     currency: string;
     productQuantity: number;
-    fee: number;
+    fee: number; // Fee in percentage that the exchange/broker will chare for each Trades
 };
 // Represent the price /volume of an assent in a concreate time
 export type TradingData = {
