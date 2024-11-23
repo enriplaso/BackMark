@@ -68,7 +68,7 @@ export class OrderManager implements IOrderManager {
     }
 
     private calculateFee(funds: number, fee: number): number {
-        return funds / (fee * 100);
+        return (fee / 100) * funds;
     }
 
     private closeOrder(order: Order, doneAt: number): void {
