@@ -5,6 +5,7 @@ export interface IOrderManager {
     addOrder(order: Order): void;
     getActiveOrders(): Order[];
     getClosedOrders(): Order[];
+    getOrderById(orderId: string): Order | undefined;
     cancelOrder(orderId: string, timestamp: number): void;
     cancelAllOrders(timestamp: number): void;
     getAllTrades(): Trade[];

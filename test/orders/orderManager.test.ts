@@ -4,7 +4,7 @@ import { Order, OrderStatus, OrderType, Side, TimeInForce, Trade } from '../../s
 import { expect } from 'chai';
 import 'mocha';
 
-describe('OrderManager', () => {
+describe.only('OrderManager', () => {
     let orderManager: OrderManager;
     let account: Account;
 
@@ -106,11 +106,12 @@ describe('OrderManager', () => {
 
     describe('processOrder', () => {
         it('should execute a market buy order', () => {
+            const orderFunds = 5000;
             const order: Order = {
                 id: '1',
                 type: OrderType.MARKET,
                 side: Side.BUY,
-                funds: 5000,
+                funds: orderFunds,
                 status: OrderStatus.OPEN,
                 timeInForce: TimeInForce.GOOD_TILL_CANCEL,
             };
@@ -127,12 +128,12 @@ describe('OrderManager', () => {
             orderManager.processOrder(order, account, tradingData);
 
             const trades = orderManager.getAllTrades();
-            expect(account.balance).to.equal(beforeTradeBalance - order.funds! - appliedFee);
-            expect(account.productQuantity).to.equal((order.funds! - appliedFee) / tradingData.price);
+            expect(account.balance).to.equal(beforeTradeBalance - orderFunds - appliedFee);
+            expect(account.productQuantity).to.equal((orderFunds - appliedFee) / tradingData.price);
             expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
             expect(orderManager.getActiveOrders()).to.be.empty;
             expect(trades).to.have.lengthOf(1);
-            expect(trades[0].price).to.equal(order.funds! + appliedFee);
+            expect(trades[0].price).to.equal(orderFunds! + appliedFee);
             expect(trades[0].side).to.equal('buy');
         });
 

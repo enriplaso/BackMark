@@ -12,29 +12,30 @@ export class OrderManager implements IOrderManager {
     }
 
     public getActiveOrders(): Order[] {
-        return this.orders;
+        return [...this.orders]; // Return a copy to prevent external mutation
     }
 
     public getClosedOrders(): Order[] {
-        return this.closedOrders;
+        return [...this.closedOrders];
     }
 
     public getAllTrades(): Trade[] {
-        return this.trades;
+        return [...this.trades];
+    }
+
+    public getOrderById(orderId: string): Order | undefined {
+        return this.orders.find((order) => order.id === orderId) ?? this.closedOrders.find((order) => order.id === orderId);
     }
 
     public cancelOrder(orderId: string, timestamp: number): void {
         const index = this.orders.findIndex((order) => orderId === order.id);
         if (index === -1) {
+            console.warn(`Order not found: ${orderId}`);
             return;
         }
         const order = this.orders[index];
-        order.doneAt = new Date(timestamp);
-        order.doneReason = 'Cancelled';
-        order.status = OrderStatus.DONE;
-        this.closedOrders.push(order);
-
-        this.orders.splice(index, 1); // Remove order form  active orders
+        this.closeOrder(order, timestamp, 'Cancelled');
+        console.log(`Order cancelled: ${orderId}`);
     }
 
     public cancelAllOrders(timestamp: number): void {
@@ -49,20 +50,18 @@ export class OrderManager implements IOrderManager {
     }
 
     public processOrder(order: Order, account: Account, tradingData: TradingData): void {
-        if (this.shouldExecuteOrder(order, tradingData)) {
-            if (order.side === Side.BUY) {
-                if (order.stop) {
-                    order.stop = undefined; // Becomes a Market order
-                }
-                return this.executeBuyOrder(order, account, tradingData);
-            }
+        if (!this.shouldExecuteOrder(order, tradingData)) {
+            return;
+        }
 
-            if (order.side === Side.SELL) {
-                if (order.stop) {
-                    order.stop = undefined; // Becomes a Market order
-                }
-                return this.executeSellOrder(order, account, tradingData);
-            }
+        if (order.stop) {
+            order.stop = undefined; // Becomes a Market order
+        }
+
+        if (order.side === Side.BUY) {
+            this.executeBuyOrder(order, account, tradingData);
+        } else if (order.side === Side.SELL) {
+            this.executeSellOrder(order, account, tradingData);
         }
     }
 
@@ -81,116 +80,62 @@ export class OrderManager implements IOrderManager {
         return (fee / 100) * funds;
     }
 
-    private closeOrder(order: Order, doneAt: number): void {
+    private closeOrder(order: Order, timestamp: number, reason: string): void {
         order.status = OrderStatus.DONE;
-        order.doneAt = new Date(doneAt);
+        order.doneAt = new Date(timestamp);
+        order.doneReason = reason;
         this.closedOrders.push(order);
 
         const index = this.orders.findIndex((activeOrder) => order.id === activeOrder.id);
-        this.orders.splice(index, 1);
+        if (index !== -1) {
+            this.orders.splice(index, 1);
+        }
     }
 
     private executeBuyOrder(order: Order, account: Account, tradingData: TradingData): void {
-        const buyOrderFee = this.calculateFee(order.funds!, account.fee);
-        const maxQuantity = (order.funds! - buyOrderFee) / tradingData.price;
+        const tradeFunds = Math.min(order.funds!, tradingData.volume * tradingData.price);
+        const fee = this.calculateFee(tradeFunds, account.fee);
+        const quantityBought = (tradeFunds - fee) / tradingData.price;
 
-        if (tradingData.volume >= maxQuantity) {
-            account.productQuantity += maxQuantity;
-            const tradeTotalPrice = order.funds! + buyOrderFee;
-            account.balance -= tradeTotalPrice;
-            this.trades.push({
-                orderId: order.id,
-                price: tradeTotalPrice,
-                quantity: maxQuantity,
-                createdAt: new Date(tradingData.timestamp),
-                side: order.side,
-                balanceAfterTrade: account.balance,
-                holdingsAfterTrade: account.productQuantity,
-            });
-
-            this.closeOrder(order, tradingData.timestamp);
+        if (account.balance < tradeFunds) {
+            console.warn(`Insufficient balance for order: ${order.id}`);
             return;
         }
 
-        const shouldContinue = this.checkTimeInForce(order, tradingData);
+        const finalPrice = tradeFunds + fee;
 
-        if (!shouldContinue) {
-            return;
+        account.balance -= finalPrice;
+        account.productQuantity += quantityBought;
+
+        this.recordTrade(order, finalPrice, quantityBought, account, tradingData.timestamp);
+
+        order.funds! -= finalPrice;
+        if (order.funds! <= 0 || !this.checkTimeInForce(order, tradingData)) {
+            this.closeOrder(order, tradingData.timestamp, 'Filled');
         }
-
-        // Recalculate fee based on trade
-        const tradePrice = tradingData.volume * tradingData.price;
-        const tradeFee = this.calculateFee(tradePrice, account.fee);
-        const tradeTotalPrice = tradePrice + tradeFee;
-        account.productQuantity += tradingData.volume;
-        account.balance -= tradeTotalPrice;
-
-        this.trades.push({
-            orderId: order.id,
-            price: tradeTotalPrice,
-            quantity: tradingData.volume,
-            createdAt: new Date(tradingData.timestamp),
-            side: order.side,
-            balanceAfterTrade: account.balance,
-            holdingsAfterTrade: account.productQuantity,
-        });
-
-        if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
-            this.closeOrder(order, tradingData.timestamp);
-            return;
-        }
-
-        order.funds! -= tradePrice; // adjust order after trade
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
-        if (tradingData.volume - order.quantity! >= 0) {
-            const sellOrderFee = this.calculateFee(order.quantity! * tradingData.price, account.fee);
-            const tradeEarings = order.quantity! * tradingData.price - sellOrderFee;
-            account.balance += tradeEarings;
-            account.productQuantity -= order.quantity!;
-
-            this.trades.push({
-                orderId: order.id,
-                price: tradeEarings,
-                quantity: order.quantity!,
-                createdAt: new Date(tradingData.timestamp),
-                side: order.side,
-                balanceAfterTrade: account.balance,
-                holdingsAfterTrade: account.productQuantity,
-            });
-
-            this.closeOrder(order, tradingData.timestamp);
+        if (account.productQuantity < order.quantity!) {
+            console.warn(`Insufficient quantity for order: ${order.id}`);
             return;
         }
 
-        const shouldContinue = this.checkTimeInForce(order, tradingData);
+        const quantitySold = Math.min(order.quantity!, tradingData.volume);
+        const tradeEarnings = quantitySold * tradingData.price;
+        const fee = this.calculateFee(tradeEarnings, account.fee);
 
-        if (!shouldContinue) {
-            return;
+        const finalEarnings = tradeEarnings - fee;
+
+        account.balance += finalEarnings;
+        account.productQuantity -= quantitySold;
+
+        this.recordTrade(order, finalEarnings, quantitySold, account, tradingData.timestamp);
+
+        order.quantity! -= quantitySold;
+        if (order.quantity! <= 0 || !this.checkTimeInForce(order, tradingData)) {
+            this.closeOrder(order, tradingData.timestamp, 'Filled');
         }
-
-        const sellTradeFee = this.calculateFee(tradingData.volume * tradingData.price, account.fee);
-        const tradeEarings = tradingData.volume * tradingData.price - sellTradeFee;
-        account.balance += tradeEarings;
-        account.productQuantity -= tradingData.volume;
-
-        this.trades.push({
-            orderId: order.id,
-            price: tradeEarings,
-            quantity: tradingData.volume, // cannot sell more than the available volume !!!
-            createdAt: new Date(tradingData.timestamp),
-            side: order.side,
-            balanceAfterTrade: account.balance,
-            holdingsAfterTrade: account.productQuantity,
-        });
-
-        if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
-            this.closeOrder(order, tradingData.timestamp);
-            return;
-        }
-
-        order.quantity! -= tradingData.volume; // remaining volume for hte order
     }
 
     private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
@@ -199,19 +144,33 @@ export class OrderManager implements IOrderManager {
             case TimeInForce.GOOD_TILL_CANCEL: // default
                 break; // continue
             case TimeInForce.FILL_OR_KILL:
-                this.closeOrder(order, tradingData.timestamp);
+                this.closeOrder(order, tradingData.timestamp, 'Expired');
                 shouldContinue = false;
                 break;
             case TimeInForce.INMEDIATE_OR_CANCELL:
+                this.closeOrder(order, tradingData.timestamp, 'Partially Filled');
+                shouldContinue = false;
                 break;
             case TimeInForce.GOOD_TILL_TIME:
                 if (order.expireTime && order?.expireTime?.getTime() >= tradingData.timestamp) {
-                    this.closeOrder(order, tradingData.timestamp);
+                    this.closeOrder(order, tradingData.timestamp, 'Expired');
                     shouldContinue = false;
                 }
                 break;
         }
 
         return shouldContinue;
+    }
+
+    private recordTrade(order: Order, price: number, quantity: number, account: Account, timestamp: number): void {
+        this.trades.push({
+            orderId: order.id,
+            price,
+            quantity,
+            createdAt: new Date(timestamp),
+            side: order.side,
+            balanceAfterTrade: account.balance,
+            holdingsAfterTrade: account.productQuantity,
+        });
     }
 }
