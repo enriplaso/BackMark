@@ -1,4 +1,4 @@
-import { Account, SimulationOptions, TradingData } from './types.js';
+import type { Account, SimulationOptions, TradingData } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
 import type { Order, Trade } from '../orders/types.js';
 import { OrderStatus, OrderType, Side, Stop, TimeInForce } from '../orders/types.js';

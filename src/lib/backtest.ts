@@ -21,7 +21,6 @@ export class BackTest implements IBackTest {
         private readonly StrategyClass: new (exchangeClient: IExchangeClient) => Strategy,
         private readonly options: BackTestOptions,
     ) {
-        // Initialize the exchange simulator with the given options
         this.exchangeSimulator = new ExchangeSimulator({
             productName: options.productName || 'Unknown',
             accountBalance: options.accountBalance,

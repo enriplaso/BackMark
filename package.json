@@ -10,6 +10,7 @@
     "lint": "eslint --fix ./src ",
     "test": "mocha --config=./test/.mocharc.json ",
     "test:coverage": "c8 npm run test",
+    "coverage": "c8 report --reporter=text-summary",
     "clean": "rm -rf dist build package",
     "build": "tsc -p tsconfig.json"
   },
