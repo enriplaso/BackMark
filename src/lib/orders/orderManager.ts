@@ -68,19 +68,10 @@ export class OrderManager implements IOrderManager {
         );
     }
 
-    private calculateFee(funds: number, fee: number): number {
-        return (fee / 100) * funds;
-    }
-
-    private closeOrder(order: Order, timestamp: number, reason: string): void {
-        order.status = OrderStatus.DONE;
-        order.doneAt = new Date(timestamp);
-        order.doneReason = reason;
-        this.closedOrders.push(order);
-
-        const index = this.orders.findIndex((activeOrder) => order.id === activeOrder.id);
-        if (index !== -1) {
-            this.orders.splice(index, 1);
+    private transformStopToMarketOrder(order: Order): void {
+        if (order.stop) {
+            order.type = OrderType.MARKET;
+            order.stop = undefined;
         }
     }
 
@@ -140,6 +131,22 @@ export class OrderManager implements IOrderManager {
         this.checkOrderClosing(order.quantity!, order, tradingData);
     }
 
+    private calculateFee(funds: number, fee: number): number {
+        return (fee / 100) * funds;
+    }
+
+    private closeOrder(order: Order, timestamp: number, reason: string): void {
+        order.status = OrderStatus.DONE;
+        order.doneAt = new Date(timestamp);
+        order.doneReason = reason;
+        this.closedOrders.push(order);
+
+        const index = this.orders.findIndex((activeOrder) => order.id === activeOrder.id);
+        if (index !== -1) {
+            this.orders.splice(index, 1);
+        }
+    }
+
     private checkOrderClosing(filledQuantity: number, order: Order, tradingData: TradingData): void {
         // Order.quantity for sell orders , Order.funds for buy orders
         if (filledQuantity <= 0) {
@@ -155,13 +162,6 @@ export class OrderManager implements IOrderManager {
         if (order.timeInForce === TimeInForce.GOOD_TILL_TIME && order.expireTime && order.expireTime.getTime() <= tradingData.timestamp) {
             this.closeOrder(order, tradingData.timestamp, 'Expired');
             return;
-        }
-    }
-
-    private transformStopToMarketOrder(order: Order): void {
-        if (order.stop) {
-            order.type = OrderType.MARKET;
-            order.stop = undefined;
         }
     }
 

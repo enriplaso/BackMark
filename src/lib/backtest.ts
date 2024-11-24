@@ -21,17 +21,19 @@ export class BackTest implements IBackTest {
         private readonly StrategyClass: new (exchangeClient: IExchangeClient) => Strategy,
         private readonly options: BackTestOptions,
     ) {
+        // Initialize the exchange simulator with the given options
         this.exchangeSimulator = new ExchangeSimulator({
             productName: options.productName || 'Unknown',
-            accountBalance: this.options.accountBalance,
-            fee: this.options.fee,
+            accountBalance: options.accountBalance,
+            fee: options.fee,
         });
 
+        // Store the initial funds and initialize the strategy
         this.initialFunds = options.accountBalance;
         this.strategy = new StrategyClass(this.exchangeSimulator);
     }
 
-    async run(): Promise<void> {
+    public async run(): Promise<void> {
         const startTime = Date.now();
         this.spinner.start('Reading market data history file line by line');
 
@@ -40,19 +42,23 @@ export class BackTest implements IBackTest {
                 input: createReadStream(this.tradingDataPath),
             });
 
-            let lines = 0;
+            let lineCount = 0;
+
             for await (const line of readInterface) {
-                lines++;
-                if (lines > 1) {
-                    const tradingData = this.getTradingDataFromLine(line);
-                    await this.strategy.checkPosition(tradingData);
-                    this.exchangeSimulator.processOrders(tradingData);
-                }
+                lineCount++;
+
+                // Skip the header line
+                if (lineCount === 1) continue;
+
+                const tradingData = this.parseTradingData(line);
+                await this.strategy.checkPosition(tradingData);
+                this.exchangeSimulator.processOrders(tradingData);
             }
 
-            this.spinner.stop(`Reading file line by line done with a total of ${lines} lines`);
+            this.spinner.stop(`Finished processing ${lineCount} lines of market data`);
             console.info(`Test duration: ${(Date.now() - startTime) / 1000}s`);
         } catch (error) {
+            this.spinner.stop('An error occurred during the backtest');
             console.error(error);
         }
     }
@@ -60,20 +66,30 @@ export class BackTest implements IBackTest {
     public getResult(): BackTestResult {
         const account = this.exchangeSimulator.getAccount();
         const totalProfit = account.balance - this.initialFunds;
+
         return {
             initialBalance: this.initialFunds,
-            product: 'BTC',
+            product: this.options.productName!,
             finalHoldings: account.productQuantity,
             finalBalance: account.balance,
             totalProfit,
             tradeHistory: this.exchangeSimulator.getAllTrades(),
-            profitPercentage: 100 * (totalProfit / this.initialFunds),
+            profitPercentage: (totalProfit / this.initialFunds) * 100,
         };
     }
 
-    private getTradingDataFromLine(lineData: string): TradingData {
-        const [timestamp, open, close, high, low, volume] = lineData.split(',').map((e) => parseFloat(e));
-        const price = (open + close + high + low) / 4;
-        return { timestamp, price, volume };
+    /**
+     * Parses a line of CSV trading data into a `TradingData` object.
+     * @param lineData A CSV line representing a single time interval of trading data.
+     * @returns The parsed trading data.
+     */
+    private parseTradingData(lineData: string): TradingData {
+        const [timestamp, open, close, high, low, volume] = lineData.split(',').map(Number);
+
+        return {
+            timestamp,
+            price: (open + close + high + low) / 4,
+            volume,
+        };
     }
 }

@@ -14,11 +14,6 @@ export enum TimeInForce {
     FILL_OR_KILL = 'FOK', // Fill or kill orders are rejected if the entire size cannot be matched.
 }
 
-export enum CancelAfter {
-    MIN = 'min',
-    HOUR = 'hour',
-    DAY = 'day', // Order will be cancelled in 24 hours
-}
 export enum OrderType {
     LIMIT = 'limit',
     MARKET = 'market',
@@ -48,7 +43,7 @@ export type Order = {
     expireTime?: Date; // timestamp at which order expires
     doneAt?: Date; // time at which order was done
     doneReason?: string; // reason order was done (filled, rejected, or otherwise)
-    rejectReason?: string; //TODO : check if is used
+    rejectReason?: string;
     fillFees?: number; //fees paid on current filled amount
     stop?: Stop;
     stopPrice?: number; // price (in quote currency) at which to execute the order

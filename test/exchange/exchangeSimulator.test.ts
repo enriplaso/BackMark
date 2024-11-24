@@ -9,18 +9,18 @@ describe('Exchange Simulator tests', function () {
     let exchangeSimulator: IExchangeSimulator;
 
     beforeEach(() => {
-        exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: 1000, fee: 1 });
+        exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: 1000 });
     });
 
     describe('Market Orders', () => {
         it('Should create a market buy order', function () {
             const funds = 500;
 
-            const order = exchangeSimulator.marketBuyOrder(funds);
+            const order = exchangeSimulator.marketBuyOrder(funds, TimeInForce.GOOD_TILL_TIME, new Date());
 
             expect(order.side).to.equal(Side.BUY);
             expect(order.type).to.equal(OrderType.MARKET);
-            expect(order.timeInForce).to.equal(TimeInForce.GOOD_TILL_CANCEL);
+            expect(order.timeInForce).to.equal(TimeInForce.GOOD_TILL_TIME);
             expect(order.funds).to.equal(funds);
         });
 
@@ -28,6 +28,12 @@ describe('Exchange Simulator tests', function () {
             const funds = 2000;
 
             expect(() => exchangeSimulator.marketBuyOrder(funds)).to.throw('There is not enough funds in the account');
+        });
+
+        it('Should not create a market but order if TimeInForce is GOOD_TILL_TIME and not expire date is passed', function () {
+            const funds = 10;
+
+            expect(() => exchangeSimulator.marketBuyOrder(funds, TimeInForce.GOOD_TILL_TIME)).to.throw('.');
         });
 
         it('Should create a market sell order', function () {
@@ -67,6 +73,25 @@ describe('Exchange Simulator tests', function () {
             const funds = 500;
 
             expect(() => exchangeSimulator.limitBuyOrder(price, funds)).to.throw('Price must be greater than 0');
+        });
+
+        it('Should create a limit Sell order', function () {
+            const price = 30000;
+            const quantity = 0.5;
+            exchangeSimulator = new ExchangeSimulator({ productName: 'BTC-USD', accountBalance: 1000, fee: 1, productQuantity: 1 });
+
+            const order = exchangeSimulator.limitSellOrder(price, quantity);
+
+            expect(order.side).to.equal(Side.SELL);
+            expect(order.type).to.equal(OrderType.LIMIT);
+            expect(order.price).to.equal(price);
+            expect(order.quantity).to.equal(quantity);
+        });
+        it('Should not create a limit buy order with invalid price', function () {
+            const price = 30000;
+            const quantity = 1.5;
+
+            expect(() => exchangeSimulator.limitSellOrder(price, quantity)).to.throw('There is not enough product quantity to sell.');
         });
     });
 

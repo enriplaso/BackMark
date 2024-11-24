@@ -1,22 +1,79 @@
+/**
+ * Configuration options for simulating an exchange environment.
+ */
 export type SimulationOptions = {
-    productName: string; // EG BTC-USD
-    accountBalance: number; // The initial money that you have in your account
-    fee?: number; // Exchange Operation Fee, default 1
-    productQuantity?: number; //E.G Bitcoin quantity , default 0
-    randomizeFactor?: 0 | 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9; // This will randomize how transaction are processed to give more realism
+    /**
+     * The name of the trading pair (e.g., "BTC-USD").
+     */
+    productName: string;
+
+    /**
+     * The initial account balance in USD.
+     */
+    accountBalance: number;
+
+    /**
+     * The exchange operation fee in percentage. Defaults to 0%.
+     */
+    fee?: number;
+
+    /**
+     * The initial quantity of the product (e.g., Bitcoin) in the account. Defaults to 0.
+     */
+    productQuantity?: number;
 };
 
+/**
+ * Represents an account on the exchange.
+ */
 export type Account = {
+    /**
+     * Unique identifier for the account.
+     */
     id: string;
+
+    /**
+     * The total balance available in the account in USD.
+     */
     balance: number;
-    available: number; // how much you can cash out
+
+    /**
+     * The amount of the balance that can be withdrawn or used for trades.
+     */
+    available: number;
+
+    /**
+     * The currency of the account balance (e.g., "USD").
+     */
     currency: string;
+
+    /**
+     * The quantity of the traded product (e.g., Bitcoin) held in the account.
+     */
     productQuantity: number;
-    fee: number; // Fee in percentage that the exchange/broker will add for each Trades
+
+    /**
+     * The exchange fee as a percentage for each trade.
+     */
+    fee: number;
 };
-// Represent the price /volume of an assent in a concreate time
+
+/**
+ * Represents the trading data for a specific point in time.
+ */
 export type TradingData = {
+    /**
+     * The timestamp of the trading data in milliseconds since the UNIX epoch.
+     */
     timestamp: number;
+
+    /**
+     * The price of the traded product at the specified timestamp.
+     */
     price: number;
-    volume: number; // Product quantiy e:g  num BTCs
+
+    /**
+     * The volume of the traded product (e.g., the number of BTC traded).
+     */
+    volume: number;
 };

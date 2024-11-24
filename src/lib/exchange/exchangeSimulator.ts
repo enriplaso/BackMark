@@ -1,4 +1,4 @@
-import type { Account, SimulationOptions, TradingData } from './types.js';
+import { Account, SimulationOptions, TradingData } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
 import type { Order, Trade } from '../orders/types.js';
 import { OrderStatus, OrderType, Side, Stop, TimeInForce } from '../orders/types.js';
@@ -32,36 +32,42 @@ export class ExchangeSimulator implements IExchangeSimulator {
         });
     }
 
-    public marketBuyOrder(funds: number, timeInForce?: TimeInForce): Order {
+    public marketBuyOrder(funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertFunds(funds);
-        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, undefined, timeInForce);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, undefined, timeInForce, undefined, cancelAfter);
     }
 
-    public marketSellOrder(quantity: number, timeInForce?: TimeInForce): Order {
+    public marketSellOrder(quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertQuantity(quantity);
-        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, undefined, timeInForce);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, undefined, timeInForce, undefined, cancelAfter);
     }
 
-    public limitBuyOrder(limitPrice: number, funds: number, timeInForce?: TimeInForce): Order {
+    public limitBuyOrder(limitPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertFunds(funds);
         this.assertPrice(limitPrice);
-        return this.createOrder(Side.BUY, OrderType.LIMIT, funds, undefined, limitPrice, timeInForce);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.BUY, OrderType.LIMIT, funds, undefined, limitPrice, timeInForce, undefined, cancelAfter);
     }
 
-    public limitSellOrder(limitPrice: number, quantity: number, timeInForce?: TimeInForce): Order {
+    public limitSellOrder(limitPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertQuantity(quantity);
-        return this.createOrder(Side.SELL, OrderType.LIMIT, undefined, quantity, limitPrice, timeInForce);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.SELL, OrderType.LIMIT, undefined, quantity, limitPrice, timeInForce, undefined, cancelAfter);
     }
 
-    public stopEntryOrder(stopPrice: number, funds: number, timeInForce?: TimeInForce): Order {
+    public stopEntryOrder(stopPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertFunds(funds);
-        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, stopPrice, timeInForce, Stop.ENTRY);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, stopPrice, timeInForce, Stop.ENTRY, cancelAfter);
     }
 
-    public stopLossOrder(stopPrice: number, quantity: number, timeInForce?: TimeInForce): Order {
+    public stopLossOrder(stopPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
         this.assertQuantity(quantity);
         this.assertPrice(stopPrice);
-        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, stopPrice, timeInForce, Stop.LOSS);
+        this.assertCancelAfter(timeInForce, cancelAfter);
+        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, stopPrice, timeInForce, Stop.LOSS, cancelAfter);
     }
 
     public cancelOrder(id: string): void {
@@ -72,9 +78,8 @@ export class ExchangeSimulator implements IExchangeSimulator {
         this.orderManager.cancelAllOrders(this.currentTradeTimestamp);
     }
 
-    public getAllOrders(filter?: OrderStatus[]): Order[] {
-        const orders = this.orderManager.getActiveOrders();
-        return filter?.length ? orders.filter((order) => filter.includes(order.status)) : orders;
+    public getAllOrders(): Order[] {
+        return this.orderManager.getActiveOrders();
     }
 
     public getAllTrades(): Trade[] {
@@ -85,8 +90,6 @@ export class ExchangeSimulator implements IExchangeSimulator {
         return this.account;
     }
 
-    // Private Helper Methods
-
     private createOrder(
         side: Side,
         type: OrderType,
@@ -95,6 +98,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
         price?: number,
         timeInForce: TimeInForce = TimeInForce.GOOD_TILL_CANCEL,
         stop?: Stop,
+        cancelAfter?: Date,
     ): Order {
         const order: Order = {
             id: randomUUID(),
@@ -106,6 +110,7 @@ export class ExchangeSimulator implements IExchangeSimulator {
             stop,
             stopPrice: stop ? price : undefined,
             timeInForce,
+            expireTime: timeInForce === TimeInForce.GOOD_TILL_TIME && cancelAfter !== undefined ? cancelAfter : undefined,
             createdAt: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         };
@@ -126,5 +131,11 @@ export class ExchangeSimulator implements IExchangeSimulator {
 
     private assertPrice(price: number): void {
         assert(price > 0, 'Price must be greater than 0.');
+    }
+
+    private assertCancelAfter(timeInForce?: TimeInForce, cancelAfter?: Date) {
+        if (timeInForce === TimeInForce.GOOD_TILL_TIME) {
+            assert(cancelAfter !== undefined, 'There is not an expiration date for GOOD_TILL_TIME time in force.');
+        }
     }
 }
