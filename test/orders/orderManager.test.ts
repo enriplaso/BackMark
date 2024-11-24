@@ -131,6 +131,12 @@ describe.only('OrderManager', () => {
             expect(orderManager.getActiveOrders()).to.have.lengthOf(2);
             expect(foundOrder).to.deep.equal(order2);
         });
+
+        it('should return undefined an order was not found', () => {
+            const foundOrder = orderManager.getOrderById('non-existing');
+
+            expect(foundOrder).to.be.undefined;
+        });
     });
 
     describe('processOrder', () => {
@@ -315,6 +321,40 @@ describe.only('OrderManager', () => {
             expect(orderManager.getClosedOrders()).to.have.lengthOf(0);
             expect(orderManager.getActiveOrders()).to.have.lengthOf(1);
             expect(trades).to.have.lengthOf(0);
+        });
+
+        it('should execute a stop Entry "Buy" order', () => {
+            const tradingData: TradingData = {
+                price: 100,
+                volume: 60,
+                timestamp: Date.now(),
+            };
+            const orderFunds = 5000;
+            const order: Order = {
+                id: '1',
+                type: OrderType.MARKET,
+                stop: Stop.ENTRY,
+                stopPrice: tradingData.price - 20, // we ensure will be trigger
+                side: Side.BUY,
+                funds: orderFunds,
+                status: OrderStatus.OPEN,
+                timeInForce: TimeInForce.GOOD_TILL_CANCEL,
+            };
+
+            const beforeTradeBalance = account.balance;
+            const appliedFee = (account.fee / 100) * order.funds!;
+
+            orderManager.addOrder(order);
+            orderManager.processOrder(order, account, tradingData);
+
+            const trades = orderManager.getAllTrades();
+            expect(account.balance).to.equal(beforeTradeBalance - orderFunds - appliedFee);
+            expect(account.productQuantity).to.equal((orderFunds - appliedFee) / tradingData.price);
+            expect(orderManager.getClosedOrders()).to.have.lengthOf(1);
+            expect(orderManager.getActiveOrders()).to.be.empty;
+            expect(trades).to.have.lengthOf(1);
+            expect(trades[0].price).to.equal(orderFunds! + appliedFee);
+            expect(trades[0].side).to.equal('buy');
         });
 
         it('should execute a limit buy order', () => {
