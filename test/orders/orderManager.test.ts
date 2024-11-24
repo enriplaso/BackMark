@@ -4,7 +4,7 @@ import { Order, OrderStatus, OrderType, Side, Stop, TimeInForce, Trade } from '.
 import { expect } from 'chai';
 import 'mocha';
 
-describe.only('OrderManager', () => {
+describe('OrderManager', () => {
     let orderManager: OrderManager;
     let account: Account;
 

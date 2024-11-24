@@ -1,11 +1,11 @@
 import type { Account, SimulationOptions, TradingData } from './types.js';
 import type { IExchangeSimulator } from './IExchangeSImulator.js';
 import type { Order, Trade } from '../orders/types.js';
-
 import { OrderStatus, OrderType, Side, Stop, TimeInForce } from '../orders/types.js';
 import { randomUUID } from 'crypto';
 import { IOrderManager } from '../orders/IOrderManager.js';
 import { OrderManager } from '../orders/orderManager.js';
+import assert from 'assert';
 
 export class ExchangeSimulator implements IExchangeSimulator {
     private account: Account;
@@ -20,29 +20,92 @@ export class ExchangeSimulator implements IExchangeSimulator {
             balance: this.options.accountBalance,
             available: this.options.accountBalance,
             currency: 'USD',
-            productQuantity: 0,
+            productQuantity: this.options.productQuantity || 0,
             fee: this.options.fee || 0,
         };
     }
 
-    public processOrders(tradingData: TradingData) {
+    public processOrders(tradingData: TradingData): void {
         this.currentTradeTimestamp = tradingData.timestamp;
-        const orders = this.orderManager.getActiveOrders();
-        for (const order of orders) {
+        this.orderManager.getActiveOrders().forEach((order) => {
             this.orderManager.processOrder(order, this.account, tradingData);
-        }
+        });
     }
 
     public marketBuyOrder(funds: number, timeInForce?: TimeInForce): Order {
-        if (funds + this.account.fee > this.account.balance) {
-            throw new Error('There is not enough funds in the account');
-        }
+        this.assertFunds(funds);
+        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, undefined, timeInForce);
+    }
+
+    public marketSellOrder(quantity: number, timeInForce?: TimeInForce): Order {
+        this.assertQuantity(quantity);
+        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, undefined, timeInForce);
+    }
+
+    public limitBuyOrder(limitPrice: number, funds: number, timeInForce?: TimeInForce): Order {
+        this.assertFunds(funds);
+        this.assertPrice(limitPrice);
+        return this.createOrder(Side.BUY, OrderType.LIMIT, funds, undefined, limitPrice, timeInForce);
+    }
+
+    public limitSellOrder(limitPrice: number, quantity: number, timeInForce?: TimeInForce): Order {
+        this.assertQuantity(quantity);
+        return this.createOrder(Side.SELL, OrderType.LIMIT, undefined, quantity, limitPrice, timeInForce);
+    }
+
+    public stopEntryOrder(stopPrice: number, funds: number, timeInForce?: TimeInForce): Order {
+        this.assertFunds(funds);
+        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, stopPrice, timeInForce, Stop.ENTRY);
+    }
+
+    public stopLossOrder(stopPrice: number, quantity: number, timeInForce?: TimeInForce): Order {
+        this.assertQuantity(quantity);
+        this.assertPrice(stopPrice);
+        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, stopPrice, timeInForce, Stop.LOSS);
+    }
+
+    public cancelOrder(id: string): void {
+        this.orderManager.cancelOrder(id, this.currentTradeTimestamp);
+    }
+
+    public cancelAllOrders(): void {
+        this.orderManager.cancelAllOrders(this.currentTradeTimestamp);
+    }
+
+    public getAllOrders(filter?: OrderStatus[]): Order[] {
+        const orders = this.orderManager.getActiveOrders();
+        return filter?.length ? orders.filter((order) => filter.includes(order.status)) : orders;
+    }
+
+    public getAllTrades(): Trade[] {
+        return this.orderManager.getAllTrades();
+    }
+
+    public getAccount(): Account {
+        return this.account;
+    }
+
+    // Private Helper Methods
+
+    private createOrder(
+        side: Side,
+        type: OrderType,
+        funds?: number,
+        quantity?: number,
+        price?: number,
+        timeInForce: TimeInForce = TimeInForce.GOOD_TILL_CANCEL,
+        stop?: Stop,
+    ): Order {
         const order: Order = {
             id: randomUUID(),
-            side: Side.BUY,
+            side,
+            type,
             funds,
-            type: OrderType.MARKET,
-            timeInForce: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
+            quantity,
+            price,
+            stop,
+            stopPrice: stop ? price : undefined,
+            timeInForce,
             createdAt: new Date(this.currentTradeTimestamp),
             status: OrderStatus.RECEIVED,
         };
@@ -51,115 +114,17 @@ export class ExchangeSimulator implements IExchangeSimulator {
         return order;
     }
 
-    public marketSellOrder(size: number, timeInForce?: TimeInForce): Order {
-        if (size <= 0) {
-            throw new Error('Size must be a value greater than 0');
-        }
-        if (size > this.account.productQuantity) {
-            throw new Error('There is not enough amount of the current product to sell');
-        }
-        const order = {
-            id: randomUUID(),
-            side: Side.SELL,
-            quantity: size,
-            type: OrderType.MARKET,
-            timeInForce: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
-            createdAt: new Date(this.currentTradeTimestamp),
-            status: OrderStatus.RECEIVED,
-        } as Order;
-
-        this.orderManager.addOrder(order);
-
-        return order;
-    }
-    public limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce): Order {
-        if (funds + this.account.fee > this.account.balance) {
-            throw new Error('There is not enough funds in the account');
-        }
-        if (price <= 0) {
-            throw new Error('Price must be greater than 0');
-        }
-
-        const order = {
-            id: randomUUID(),
-            side: Side.BUY,
-            funds,
-            type: OrderType.LIMIT,
-            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
-            price,
-            created_at: new Date(this.currentTradeTimestamp),
-            status: OrderStatus.RECEIVED,
-        } as unknown as Order;
-
-        this.orderManager.addOrder(order);
-
-        return order;
+    private assertFunds(funds: number): void {
+        assert(funds > 0, 'Funds must be greater than 0.');
+        assert(funds + this.account.fee <= this.account.balance, 'There is not enough funds in the account.');
     }
 
-    public stopEntryOrder(prize: number, funds: number, timeInForce?: TimeInForce): Order {
-        if (funds + this.account.fee > this.account.balance) {
-            throw new Error('There is not enough funds in the account');
-        }
-        const order = {
-            id: randomUUID(),
-            side: Side.BUY,
-            stop: Stop.ENTRY,
-            stop_price: prize,
-            funds,
-            type: OrderType.MARKET,
-            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
-            created_at: new Date(this.currentTradeTimestamp),
-            status: OrderStatus.RECEIVED,
-        } as unknown as Order;
-
-        this.orderManager.addOrder(order);
-        return order;
-    }
-    public stopLossOrder(prize: number, size: number, timeInForce?: TimeInForce): Order {
-        if (size <= 0) {
-            throw new Error('Size must be a value greater than 0');
-        }
-
-        if (size > this.account.productQuantity) {
-            throw new Error('There is not enough amount of the current product to sell');
-        }
-
-        if (prize <= 0) {
-            throw new Error('Price must be greater than 0');
-        }
-        const order = {
-            id: randomUUID(),
-            side: Side.SELL,
-            stop: Stop.LOSS,
-            stop_price: prize,
-            size,
-            type: OrderType.MARKET,
-            time_in_force: timeInForce || TimeInForce.GOOD_TILL_CANCEL,
-            created_at: new Date(this.currentTradeTimestamp),
-            status: OrderStatus.RECEIVED,
-        } as unknown as Order;
-
-        this.orderManager.addOrder(order);
-        return order;
-    }
-    public cancelOrder(id: string): void {
-        this.orderManager.cancelOrder(id, this.currentTradeTimestamp);
+    private assertQuantity(quantity: number): void {
+        assert(quantity > 0, 'Quantity must be greater than 0.');
+        assert(quantity <= this.account.productQuantity, 'There is not enough product quantity to sell.');
     }
 
-    public getAllOrders(filter?: OrderStatus[]): Order[] {
-        const orders = this.orderManager.getActiveOrders();
-        if (filter && filter?.length > 0) {
-            return orders.filter((order) => filter?.includes(order.status));
-        }
-        return orders;
-    }
-    public getAllTrades(): Trade[] {
-        return this.orderManager.getAllTrades();
-    }
-    public cancelAllOrders() {
-        this.orderManager.cancelAllOrders(this.currentTradeTimestamp);
-    }
-    public getAccount(): Account {
-        return this.account;
+    private assertPrice(price: number): void {
+        assert(price > 0, 'Price must be greater than 0.');
     }
 }

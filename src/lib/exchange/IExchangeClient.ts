@@ -28,6 +28,15 @@ export interface IExchangeClient {
     limitBuyOrder(price: number, funds: number, timeInForce?: TimeInForce): Order;
 
     /**
+     * Creates a limit sell order that will be executed when the specified price is reached.
+     * @param price The target price at which to execute the buy order.
+     * @param quantity The amount product to sell
+     * @param timeInForce Optional. The duration the order will remain active. Defaults to "Good Till Canceled".
+     * @returns The created order.
+     */
+    limitSellOrder(price: number, quantity: number, timeInForce?: TimeInForce): Order;
+
+    /**
      * Creates a stop-loss order that will be triggered when the specified price is reached.
      * @param price The trigger price for the stop-loss order.
      * @param size The amount of cryptocurrency to sell when the stop-loss is triggered.
@@ -35,6 +44,15 @@ export interface IExchangeClient {
      * @returns The created order.
      */
     stopLossOrder(price: number, size: number, timeInForce?: TimeInForce): Order;
+
+    /**
+     * Creates a stop-entry buy order that will be triggered when the specified price is reached.
+     * @param price The trigger price for the stop-loss order.
+     * @param size The amount of cryptocurrency to sell when the stop-loss is triggered.
+     * @param timeInForce Optional. The duration the order will remain active. Defaults to "Good Till Canceled".
+     * @returns The created order.
+     */
+    stopEntryOrder(price: number, size: number, timeInForce?: TimeInForce): Order;
 
     /**
      * Cancels a specific order.
