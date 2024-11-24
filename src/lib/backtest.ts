@@ -5,7 +5,7 @@ import type { BackTestOptions, BackTestResult } from './types.js';
 
 import { createInterface } from 'readline';
 import { createReadStream } from 'fs';
-import { showLoading, stopLoading } from './util/loadingSpinner.js';
+import { Spinner } from './util/loadingSpinner.js';
 import { IExchangeClient } from './exchange/IExchangeClient.js';
 import { ExchangeSimulator } from './exchange/exchangeSimulator.js';
 import { Strategy } from './Strategy.js';
@@ -14,6 +14,8 @@ export class BackTest implements IBackTest {
     private readonly initialFunds: number;
     private readonly strategy: Strategy;
     private readonly exchangeSimulator: IExchangeSimulator;
+    private readonly spinner: Spinner = new Spinner();
+
     constructor(
         private readonly tradingDataPath: string,
         private readonly StrategyClass: new (exchangeClient: IExchangeClient) => Strategy,
@@ -31,7 +33,7 @@ export class BackTest implements IBackTest {
 
     async run(): Promise<void> {
         const startTime = Date.now();
-        showLoading('Reading market data history file line by line');
+        this.spinner.start('Reading market data history file line by line');
 
         try {
             const readInterface = createInterface({
@@ -48,7 +50,7 @@ export class BackTest implements IBackTest {
                 }
             }
 
-            stopLoading(`Reading file line by line done with a total of ${lines} lines`);
+            this.spinner.stop(`Reading file line by line done with a total of ${lines} lines`);
             console.info(`Test duration: ${(Date.now() - startTime) / 1000}s`);
         } catch (error) {
             console.error(error);

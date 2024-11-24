@@ -1,39 +1,50 @@
 import readline from 'readline';
 
-const spinnerFrames = ['|', '/', '-', '\\'];
+export class Spinner {
+    private static spinnerFrames = ['|', '/', '-', '\\'];
+    private spinnerInterval: NodeJS.Timeout | null = null;
+    private frameIndex: number = 0;
 
-let spinnerInterval: NodeJS.Timeout | null = null;
-let frameIndex = 0;
+    /**
+     * Starts the spinner with a given message.
+     * @param message The message to display alongside the spinner.
+     */
+    public start(message: string): void {
+        if (this.spinnerInterval) {
+            console.warn("A spinner is already running. Call 'stop' before starting a new one.");
+            return;
+        }
 
-export function showLoading(message: string): void {
-    if (spinnerInterval) {
-        console.warn("A spinner is already running. Call 'stopLoading' before starting a new one.");
-        return;
+        this.spinnerInterval = setInterval(() => {
+            // Clear the previous line
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+
+            // Display the spinner and message
+            const frame = Spinner.spinnerFrames[this.frameIndex];
+            process.stdout.write(`${frame} ${message}`);
+
+            this.frameIndex = (this.frameIndex + 1) % Spinner.spinnerFrames.length;
+        }, 100);
     }
 
-    spinnerInterval = setInterval(() => {
-        // Clear the previous line
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
+    /**
+     * Stops the spinner and displays a final message.
+     * @param message The message to display after stopping the spinner.
+     */
+    public stop(message: string): void {
+        if (this.spinnerInterval) {
+            clearInterval(this.spinnerInterval);
+            this.spinnerInterval = null;
 
-        // Display the spinner and message
-        const frame = spinnerFrames[frameIndex];
-        process.stdout.write(`${frame} ${message}`);
-
-        frameIndex = (frameIndex + 1) % spinnerFrames.length;
-    }, 100);
-}
-
-export function stopLoading(message: string): void {
-    if (spinnerInterval) {
-        clearInterval(spinnerInterval);
-        spinnerInterval = null;
-
-        // Clear the spinner and display the final message
-        readline.clearLine(process.stdout, 0);
-        readline.cursorTo(process.stdout, 0);
-        console.info(`${message}... done`);
-    } else {
-        console.warn('No spinner is running to stop.');
+            // Clear the spinner and display the final message
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            console.info(`${message}... done`);
+        } else {
+            console.warn('No spinner is running to stop.');
+        }
     }
 }
+
+export default Spinner;

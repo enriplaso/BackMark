@@ -2,15 +2,17 @@ import { expect } from 'chai';
 import { describe, it, afterEach } from 'mocha';
 import sinon, { SinonFakeTimers, SinonStub } from 'sinon';
 import readline from 'readline';
-import { showLoading, stopLoading } from '../../src/lib/util/loadingSpinner.js';
+import { Spinner } from '../../src/lib/util/loadingSpinner.js';
 
 describe('Spinner Functions', () => {
     let clearLineStub: SinonStub;
     let cursorToStub: SinonStub;
     let writeStub: SinonStub;
     let clock: SinonFakeTimers;
+    let spinner: Spinner;
 
     beforeEach(() => {
+        spinner = new Spinner();
         clearLineStub = sinon.stub(readline, 'clearLine');
         cursorToStub = sinon.stub(readline, 'cursorTo');
         writeStub = sinon.stub(process.stdout, 'write');
@@ -25,7 +27,7 @@ describe('Spinner Functions', () => {
     describe('showLoading', () => {
         it('should display a spinner and update the frame index', () => {
             const message = 'Loading';
-            showLoading(message);
+            spinner.start(message);
 
             // Simulate spinner running for 4 frames
             for (let i = 0; i < 4; i++) {
@@ -38,20 +40,19 @@ describe('Spinner Functions', () => {
             }
 
             // Cleanup
-            stopLoading('Done');
+            spinner.stop('Done');
         });
 
         it('should not allow starting a new spinner if one is already running', () => {
             const consoleWarnStub = sinon.stub(console, 'warn');
 
-            showLoading('Loading');
-            showLoading('Another Loading');
+            spinner.start('Loading');
+            spinner.start('Another Loading');
 
-            expect(consoleWarnStub.calledOnceWith("A spinner is already running. Call 'stopLoading' before starting a new one.")).to.be
-                .true;
+            expect(consoleWarnStub.calledOnceWith("A spinner is already running. Call 'stop' before starting a new one.")).to.be.true;
 
             // Cleanup
-            stopLoading('Done');
+            spinner.stop('Done');
         });
     });
 
@@ -61,8 +62,8 @@ describe('Spinner Functions', () => {
 
             const finalMessage = 'Final Message';
 
-            showLoading('Loading');
-            stopLoading(finalMessage);
+            spinner.start('Loading');
+            spinner.stop(finalMessage);
 
             expect(clearLineStub.calledWith(process.stdout, 0)).to.be.true;
             expect(cursorToStub.calledWith(process.stdout, 0)).to.be.true;
@@ -70,8 +71,9 @@ describe('Spinner Functions', () => {
         });
 
         it('should log a warning if no spinner is running', () => {
+            const spinner = new Spinner();
             const consoleWarnStub = sinon.stub(console, 'warn');
-            stopLoading('Done');
+            spinner.stop('Done');
             expect(consoleWarnStub.calledOnceWith('No spinner is running to stop.')).to.be.true;
         });
     });
