@@ -109,11 +109,7 @@ export class OrderManager implements IOrderManager {
 
         order.funds! -= finalPrice;
 
-        if (order.funds! <= 0) {
-            this.closeOrder(order, tradingData.timestamp, 'Filled');
-        }
-
-        this.checkTimeInForce(order, tradingData);
+        this.checkOrderClosing(order.funds!, order, tradingData);
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
@@ -141,32 +137,25 @@ export class OrderManager implements IOrderManager {
 
         order.quantity! -= quantitySold;
 
-        if (order.quantity! <= 0) {
-            this.closeOrder(order, tradingData.timestamp, 'Filled');
-        }
-
-        this.checkTimeInForce(order, tradingData);
+        this.checkOrderClosing(order.quantity!, order, tradingData);
     }
 
-    //TODO: Refactora
-    private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
-        switch (order.timeInForce) {
-            case TimeInForce.GOOD_TILL_CANCEL:
-                return true;
-            case TimeInForce.FILL_OR_KILL:
-                this.closeOrder(order, tradingData.timestamp, 'Cancelled');
-                return false;
-            case TimeInForce.INMEDIATE_OR_CANCELL:
-                this.closeOrder(order, tradingData.timestamp, 'Partially Filled');
-                return false;
-            case TimeInForce.GOOD_TILL_TIME:
-                if (order.expireTime && order.expireTime.getTime() <= tradingData.timestamp) {
-                    this.closeOrder(order, tradingData.timestamp, 'Expired');
-                    return false;
-                }
+    private checkOrderClosing(filledQuantity: number, order: Order, tradingData: TradingData): void {
+        // Order.quantity for sell orders , Order.funds for buy orders
+        if (filledQuantity <= 0) {
+            this.closeOrder(order, tradingData.timestamp, 'Filled');
+            return;
         }
 
-        return true;
+        if (order.timeInForce === TimeInForce.INMEDIATE_OR_CANCELL) {
+            this.closeOrder(order, tradingData.timestamp, 'Partially Filled');
+            return;
+        }
+
+        if (order.timeInForce === TimeInForce.GOOD_TILL_TIME && order.expireTime && order.expireTime.getTime() <= tradingData.timestamp) {
+            this.closeOrder(order, tradingData.timestamp, 'Expired');
+            return;
+        }
     }
 
     private transformStopToMarketOrder(order: Order): void {
