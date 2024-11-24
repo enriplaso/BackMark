@@ -86,6 +86,12 @@ export class OrderManager implements IOrderManager {
 
     private executeBuyOrder(order: Order, account: Account, tradingData: TradingData): void {
         const tradeFunds = Math.min(order.funds!, tradingData.volume * tradingData.price);
+
+        if (order.timeInForce === TimeInForce.FILL_OR_KILL && tradeFunds !== order.funds!) {
+            this.closeOrder(order, tradingData.timestamp, 'Cancelled');
+            return;
+        }
+
         const fee = this.calculateFee(tradeFunds, account.fee);
         const quantityBought = (tradeFunds - fee) / tradingData.price;
 
@@ -102,9 +108,12 @@ export class OrderManager implements IOrderManager {
         this.recordTrade(order, finalPrice, quantityBought, account, tradingData.timestamp);
 
         order.funds! -= finalPrice;
-        if (order.funds! <= 0 || !this.checkTimeInForce(order, tradingData)) {
+
+        if (order.funds! <= 0) {
             this.closeOrder(order, tradingData.timestamp, 'Filled');
         }
+
+        this.checkTimeInForce(order, tradingData);
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
@@ -114,6 +123,12 @@ export class OrderManager implements IOrderManager {
         }
 
         const quantitySold = Math.min(order.quantity!, tradingData.volume);
+
+        if (order.timeInForce === TimeInForce.FILL_OR_KILL && quantitySold !== order.quantity!) {
+            this.closeOrder(order, tradingData.timestamp, 'Cancelled');
+            return;
+        }
+
         const tradeEarnings = quantitySold * tradingData.price;
         const fee = this.calculateFee(tradeEarnings, account.fee);
 
@@ -125,23 +140,27 @@ export class OrderManager implements IOrderManager {
         this.recordTrade(order, finalEarnings, quantitySold, account, tradingData.timestamp);
 
         order.quantity! -= quantitySold;
-        if (order.quantity! <= 0 || !this.checkTimeInForce(order, tradingData)) {
+
+        if (order.quantity! <= 0) {
             this.closeOrder(order, tradingData.timestamp, 'Filled');
         }
+
+        this.checkTimeInForce(order, tradingData);
     }
 
+    //TODO: Refactora
     private checkTimeInForce(order: Order, tradingData: TradingData): boolean {
         switch (order.timeInForce) {
-            case TimeInForce.GOOD_TILL_CANCEL: // default
-                return true; // continue
+            case TimeInForce.GOOD_TILL_CANCEL:
+                return true;
             case TimeInForce.FILL_OR_KILL:
-                this.closeOrder(order, tradingData.timestamp, 'Expired');
+                this.closeOrder(order, tradingData.timestamp, 'Cancelled');
                 return false;
             case TimeInForce.INMEDIATE_OR_CANCELL:
                 this.closeOrder(order, tradingData.timestamp, 'Partially Filled');
                 return false;
             case TimeInForce.GOOD_TILL_TIME:
-                if (order.expireTime && order.expireTime.getTime() >= tradingData.timestamp) {
+                if (order.expireTime && order.expireTime.getTime() <= tradingData.timestamp) {
                     this.closeOrder(order, tradingData.timestamp, 'Expired');
                     return false;
                 }
