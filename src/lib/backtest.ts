@@ -8,7 +8,7 @@ import { createReadStream } from 'fs';
 import { Spinner } from './util/loadingSpinner.js';
 import { IExchangeClient } from './exchange/IExchangeClient.js';
 import { ExchangeSimulator } from './exchange/exchangeSimulator.js';
-import { Strategy } from './Strategy.js';
+import { Strategy } from './strategy.js';
 
 export class BackTest implements IBackTest {
     private readonly initialFunds: number;

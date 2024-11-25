@@ -1,5 +1,4 @@
-import { Strategy } from '../../src/lib/Strategy.js';
-import type { IExchangeSimulator } from '../../src/lib/exchange/IExchangeSImulator.js';
+import { Strategy } from '../../src/lib/strategy.js';
 import type { Account, TradingData } from '../../src/lib/exchange/types.js';
 import { FasterSMA } from 'trading-signals';
 import { Stop } from '../../src/lib/orders/types.js';

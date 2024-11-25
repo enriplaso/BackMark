@@ -1,2 +1,2 @@
 export * from './lib/backtest.js';
-export * from './lib/Strategy.js';
+export * from './lib/strategy.js';
