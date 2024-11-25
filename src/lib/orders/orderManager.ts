@@ -100,7 +100,7 @@ export class OrderManager implements IOrderManager {
 
         order.funds! -= finalPrice;
 
-        this.checkOrderClosing(order.funds!, order, tradingData);
+        this.handleOrderClosure(order.funds!, order, tradingData);
     }
 
     private executeSellOrder(order: Order, account: Account, tradingData: TradingData): void {
@@ -128,7 +128,7 @@ export class OrderManager implements IOrderManager {
 
         order.quantity! -= quantitySold;
 
-        this.checkOrderClosing(order.quantity!, order, tradingData);
+        this.handleOrderClosure(order.quantity!, order, tradingData);
     }
 
     private calculateFee(funds: number, fee: number): number {
@@ -147,7 +147,7 @@ export class OrderManager implements IOrderManager {
         }
     }
 
-    private checkOrderClosing(filledQuantity: number, order: Order, tradingData: TradingData): void {
+    private handleOrderClosure(filledQuantity: number, order: Order, tradingData: TradingData): void {
         // Order.quantity for sell orders , Order.funds for buy orders
         if (filledQuantity <= 0) {
             this.closeOrder(order, tradingData.timestamp, 'Filled');
