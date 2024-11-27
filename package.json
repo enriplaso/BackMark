@@ -2,10 +2,17 @@
   "name": "backmark",
   "version": "1.0.0",
   "description": "Backtesting tool for crypto trading",
-  "main": "./dist/tsc/index.js",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "author": "Enrique Plaza <enriplaso@gmail.com>",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enriplaso/BackMark.git"
+  },
+  "homepage": "https://github.com/enriplaso/BackMark#readme",
+
   "scripts": {
     "lint": "eslint --fix ./src ",
     "test": "mocha --config=./test/.mocharc.json ",
