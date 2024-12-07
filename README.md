@@ -1,16 +1,31 @@
 # BackMark
 
-
+![TypeScript](https://img.shields.io/badge/language-TypeScript-blue)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 
-Toolkit for back testing trading algorithms oriented to crypto markets
+BackMark is a lightweight and efficient toolkit for backtesting trading algorithms. Designed with simplicity and flexibility in mind, BackMark enables seamless integration between backtesting strategies and live trading bots, ensuring minimal adjustments are needed when transitioning from simulation to real-world trading.
+
+## Why Backmark
+
+ - User-Friendly Metrics: Provides clear, easy-to-understand metrics to evaluate your strategies effectively.
+ - Realistic Order Simulation: Simulates partial order fills based on actual volume, giving you a more accurate backtesting experience.
+ - Seamless Integration: Includes a unified interface for Exchange/Broker clients, allowing you to copy your backtesting strategy directly into your trading bot with minimal or no modifications.
+ - No External Dependencies: BackMark is a self-contained solution, ensuring lightweight and hassle-free integration into your workflow.
+
+## Installation
+
+```
+ npm i backmark
+```
 
 ## How to use
 
 ```js
+   import { BackTest } from 'backmark';
+
     const options = {
         accountBalance: 1000,
-        fee: 1.5,
+        fee: 1.5, // Percentage that will be charged on each Trade
         productName: 'BTC-USD',
     };
     const backTest = new BackTest('./test/data/btcusd_short.csv', SmaStrategy, options);
