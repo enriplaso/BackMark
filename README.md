@@ -150,7 +150,7 @@ export class SmaStrategy extends Strategy {
 
 ### Testing
 
-<summary>ESM JS example:</summary>
+ESM JS example:
 
 ```js
 import { BackTest, Strategy } from 'backmark';
