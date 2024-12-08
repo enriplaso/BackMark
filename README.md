@@ -150,20 +150,36 @@ export class SmaStrategy extends Strategy {
 
 ### Testing
 
+<summary>ESM JS example:</summary>
+
 ```js
-   import { BackTest } from 'backmark';
+import { BackTest, Strategy } from 'backmark';
 
-    const options = {
-        accountBalance: 1000,
-        fee: 1.5, // Percentage that will be charged on each Trade
-        productName: 'BTC-USD',
-    };
-    const backTest = new BackTest('./test/data/btcusd.csv', SmaStrategy, options);
+// your strategy
+class SmaStrategy extends Strategy {
+    constructor(exchangeClient) {
+        super(exchangeClient);
+    }
+    async checkPosition(tradingData) {
+        console.log(tradingData);
+        this.exchangeClient.marketBuyOrder(300);
+    }
+}
 
-    await backTest.run();
+const options = {
+    accountBalance: 1000,
+    fee: 1.5,
+    productName: 'BTC-USD',
+};
 
-    const result = backTest.getResult();
-    console.info(result);
+const backTest = new BackTest('btcusd.csv', SmaStrategy, options);
+
+backTest
+    .run()
+    .then(() => {
+        console.log(backTest.getResult());
+    })
+    .catch();
 ```
 
 <details>
