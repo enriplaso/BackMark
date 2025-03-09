@@ -25,7 +25,7 @@ export class SmaStrategy extends Strategy {
         const account = await this.exchangeClient.getAccount();
 
         // Ensure a stop-loss order if holding a position
-        this.ensureStopLoss(account, tradingData.price);
+        await this.ensureStopLoss(account, tradingData.price);
 
         // pass sma days (wee need some days to calculate SMA (i))
         this.dailyPrices.push(tradingData.price);
@@ -47,7 +47,7 @@ export class SmaStrategy extends Strategy {
 
         // Execute buy/sell strategies if not traded today
         if (!this.tradedToday) {
-            this.executeTradingStrategy(tradingData, account);
+            await this.executeTradingStrategy(tradingData, account);
         }
 
         return;
@@ -67,31 +67,34 @@ export class SmaStrategy extends Strategy {
         this.tradedToday = false;
     }
 
-    private ensureStopLoss(account: Account, assetPrice: number): void {
-        const hasStopLoss = this.exchangeClient.getAllOrders().some((order) => order?.stop === Stop.LOSS);
+    private async ensureStopLoss(account: Account, assetPrice: number): Promise<void> {
+        const hasStopLoss = (await this.exchangeClient.getAllOrders()).some((order) => order?.stop === Stop.LOSS);
 
         const stopPrice = assetPrice - (assetPrice * STOP_PRICE_PERCENTAGE) / 100;
         if (!hasStopLoss && account.productQuantity > 0) {
-            this.exchangeClient.stopLossOrder(stopPrice, account.productQuantity);
+            await this.exchangeClient.stopLossOrder(stopPrice, account.productQuantity);
         }
+
+        return;
     }
 
-    private executeTradingStrategy(tradingData: TradingData, account: Account): void {
+    private async executeTradingStrategy(tradingData: TradingData, account: Account): Promise<void> {
         const smaValue = this.sma.getResult();
 
         // Buy if price is below SMA
         if (tradingData.price < smaValue * 0.94 && account.balance > 0) {
-            this.exchangeClient.marketBuyOrder(account.balance * 0.5);
+            await this.exchangeClient.marketBuyOrder(account.balance * 0.5);
         }
 
         // Sell if price is above SMA
         if (tradingData.price > smaValue * 1.02) {
             const bitcoin = account.productQuantity;
             if (bitcoin > 0) {
-                this.exchangeClient.marketSellOrder(bitcoin);
+                await this.exchangeClient.marketSellOrder(bitcoin);
             }
         }
 
         this.tradedToday = true;
+        return;
     }
 }

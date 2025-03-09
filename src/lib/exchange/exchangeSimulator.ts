@@ -32,62 +32,74 @@ export class ExchangeSimulator implements IExchangeSimulator {
         });
     }
 
-    public marketBuyOrder(funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async marketBuyOrder(funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertFunds(funds);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, undefined, timeInForce, undefined, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, undefined, timeInForce, undefined, cancelAfter),
+        );
     }
 
-    public marketSellOrder(quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async marketSellOrder(quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertQuantity(quantity);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, undefined, timeInForce, undefined, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, undefined, timeInForce, undefined, cancelAfter),
+        );
     }
 
-    public limitBuyOrder(limitPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async limitBuyOrder(limitPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertFunds(funds);
         this.assertPrice(limitPrice);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.BUY, OrderType.LIMIT, funds, undefined, limitPrice, timeInForce, undefined, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.BUY, OrderType.LIMIT, funds, undefined, limitPrice, timeInForce, undefined, cancelAfter),
+        );
     }
 
-    public limitSellOrder(limitPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async limitSellOrder(limitPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertQuantity(quantity);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.SELL, OrderType.LIMIT, undefined, quantity, limitPrice, timeInForce, undefined, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.SELL, OrderType.LIMIT, undefined, quantity, limitPrice, timeInForce, undefined, cancelAfter),
+        );
     }
 
-    public stopEntryOrder(stopPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async stopEntryOrder(stopPrice: number, funds: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertFunds(funds);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, stopPrice, timeInForce, Stop.ENTRY, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.BUY, OrderType.MARKET, funds, undefined, stopPrice, timeInForce, Stop.ENTRY, cancelAfter),
+        );
     }
 
-    public stopLossOrder(stopPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Order {
+    public async stopLossOrder(stopPrice: number, quantity: number, timeInForce?: TimeInForce, cancelAfter?: Date): Promise<Order> {
         this.assertQuantity(quantity);
         this.assertPrice(stopPrice);
         this.assertCancelAfter(timeInForce, cancelAfter);
-        return this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, stopPrice, timeInForce, Stop.LOSS, cancelAfter);
+        return Promise.resolve(
+            this.createOrder(Side.SELL, OrderType.MARKET, undefined, quantity, stopPrice, timeInForce, Stop.LOSS, cancelAfter),
+        );
     }
 
-    public cancelOrder(id: string): void {
-        this.orderManager.cancelOrder(id, this.currentTradeTimestamp);
+    public async cancelOrder(id: string): Promise<void> {
+        return Promise.resolve(this.orderManager.cancelOrder(id, this.currentTradeTimestamp));
     }
 
-    public cancelAllOrders(): void {
-        this.orderManager.cancelAllOrders(this.currentTradeTimestamp);
+    public async cancelAllOrders(): Promise<void> {
+        return Promise.resolve(this.orderManager.cancelAllOrders(this.currentTradeTimestamp));
     }
 
-    public getAllOrders(): Order[] {
-        return this.orderManager.getActiveOrders();
+    public async getAllOrders(): Promise<Order[]> {
+        return Promise.resolve(this.orderManager.getActiveOrders());
     }
 
-    public getAllTrades(): Trade[] {
-        return this.orderManager.getAllTrades();
+    public async getAllTrades(): Promise<Trade[]> {
+        return Promise.resolve(this.orderManager.getAllTrades());
     }
 
-    public getAccount(): Account {
-        return this.account;
+    public async getAccount(): Promise<Account> {
+        return Promise.resolve(this.account);
     }
 
     private createOrder(

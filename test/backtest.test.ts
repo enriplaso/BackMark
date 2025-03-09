@@ -15,7 +15,7 @@ describe('BackTest', function () {
 
         await backTest.run();
 
-        const result = backTest.getResult();
+        const result = await backTest.getResult();
 
         expect(result).to.haveOwnProperty('finalBalance');
         expect(typeof result.finalBalance).to.be.string;
@@ -45,7 +45,7 @@ describe('BackTest', function () {
         const backTest = new BackTest('./test/data/btcusd_saqw.csv', SmaStrategy, options);
         await backTest.run();
 
-        const result = backTest.getResult();
+        const result = await backTest.getResult();
         expect(result.tradeHistory).to.have.lengthOf(0);
     });
 });

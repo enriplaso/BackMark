@@ -12,5 +12,5 @@ export interface IBackTest {
      * Retrieves the results of the backtest.
      * @returns The backtest results, including account balances, trades, and profit metrics.
      */
-    getResult(): BackTestResult;
+    getResult(): Promise<BackTestResult>;
 }

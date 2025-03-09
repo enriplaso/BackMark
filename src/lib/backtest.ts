@@ -62,8 +62,8 @@ export class BackTest implements IBackTest {
         }
     }
 
-    public getResult(): BackTestResult {
-        const account = this.exchangeSimulator.getAccount();
+    public async getResult(): Promise<BackTestResult> {
+        const account = await this.exchangeSimulator.getAccount();
         const totalProfit = account.balance - this.initialFunds;
 
         return {
@@ -72,7 +72,7 @@ export class BackTest implements IBackTest {
             finalHoldings: account.productQuantity,
             finalBalance: account.balance,
             totalProfit,
-            tradeHistory: this.exchangeSimulator.getAllTrades(),
+            tradeHistory: await this.exchangeSimulator.getAllTrades(),
             profitPercentage: (totalProfit / this.initialFunds) * 100,
         };
     }
